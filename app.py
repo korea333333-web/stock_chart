@@ -270,19 +270,37 @@ def main():
     col_em, col_tg = st.columns(2)
     with col_em:
         st.markdown("**📧 리포트를 받을 이메일 주소**")
+        st.caption("작성 예시: `홍길동: hong@gmail.com`")
+        
+        # 만약 기존에 딕셔너리가 아닌 단순 문자열 리스트로 저장되어 있을 경우를 대비한 파싱 로직
+        current_emails = config.get("emails", [])
+        if current_emails and isinstance(current_emails[0], str):
+            email_text_val = "\n".join(current_emails)
+        else:
+            email_text_val = ""
+            
         emails_str = st.text_area(
             label="이메일 (엔터로 줄바꿈하여 여러 명 입력 가능)", 
-            value="\n".join(config.get("emails", [])), 
+            value=email_text_val, 
             height=120,
             label_visibility="collapsed"
         )
+        # 그냥 주소만 적어도, 이름: 주소 형태로 적어도 모두 사용 가능하게 처리
         config["emails"] = [e.strip() for e in emails_str.split("\n") if e.strip()]
         
     with col_tg:
         st.markdown("**✈️ 리포트를 받을 텔레그램 ID**")
+        st.caption("작성 예시: `김대표: 8367558795`")
+        
+        current_chat_ids = config.get("telegram", {}).get("chat_ids", [])
+        if current_chat_ids and isinstance(current_chat_ids[0], str):
+            tg_text_val = "\n".join(current_chat_ids)
+        else:
+            tg_text_val = ""
+            
         chat_ids_str = st.text_area(
             label="텔레그램 ID (엔터로 줄바꿈하여 여러 명 입력 가능)", 
-            value="\n".join(config.get("telegram", {}).get("chat_ids", [])),
+            value=tg_text_val,
             height=120,
             label_visibility="collapsed"
         )
