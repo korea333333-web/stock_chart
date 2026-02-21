@@ -167,7 +167,7 @@ def run_strategy(ticker, today=None):
     except Exception as e:
         return 0, {}, 0, 0, "Error"
 
-def scan_hot_stocks(limit=50):
+def scan_hot_stocks(limit=50, progress_callback=None):
     """
     개발 편의를 위해 전체 종목 중 거래대금 상위 종목 일부만 샘플링하여 
     빠르게 엔진을 테스트하는 함수입니다. (시가총액 500억 이상 기본 조건)
@@ -184,11 +184,12 @@ def scan_hot_stocks(limit=50):
     # df_cap 안의 'Name' 컬럼 활용
     names_dict = df_cap['Name'].to_dict()
     
-    for tk in tickers:
+    for i, tk in enumerate(tickers):
         score, details, price, chg_pct, pass_str = run_strategy(tk)
         
+        name = names_dict.get(tk, tk)
+        
         if score > 0:
-            name = names_dict.get(tk, tk)
             market_cap_100m = df_cap.loc[tk, '시가총액(억)'] if tk in df_cap.index else 0
             
             results.append({
@@ -201,6 +202,9 @@ def scan_hot_stocks(limit=50):
                 '적합도 점수': score,
                 '조건만족': pass_str
             })
+            
+        if progress_callback:
+            progress_callback(i + 1, len(tickers), name)
             
     df_res = pd.DataFrame(results)
     if not df_res.empty:

@@ -82,10 +82,27 @@ def main():
     st.subheader("📈 실시간 검색 결과")
     
     if st.button("🚀 지금 실시간 검색 돌리기", type="primary", use_container_width=True):
-        with st.spinner("코스피/코스닥 종목들을 스캔 중입니다... (테스트용으로 상위 50종목 1차 스캔 중)"):
-            # 엔진 실행 (현재는 속도를 위해 limit=50. 추후 원하시는 만큼 늘릴 수 있음)
-            df = engine.scan_hot_stocks(limit=50)
-            st.session_state['search_result'] = df
+        st.info("코스피/코스닥 시가총액 상위 종목들을 스캔 중입니다... (속도를 위해 상위 30종목 1차 스캔)")
+        
+        # 진행 상태를 표시할 빈 공간(영역) 생성
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        # 콜백 함수: 엔진이 종목 하나를 분석할 때마다 이 함수를 눌러서 화면 갱신
+        def update_progress(current, total, current_ticker_name):
+            percent = int((current / total) * 100)
+            progress_bar.progress(percent)
+            status_text.text(f"스캔 진행 중... {current}/{total} (현재 분석 중: {current_ticker_name})")
+            
+        # 엔진 실행 (limit=30 으로 조정하여 속도 향상, 콜백 함수 연결)
+        df = engine.scan_hot_stocks(limit=30, progress_callback=update_progress)
+        
+        # 검색이 다 끝나면 프로그레스 바 흔적 지우기
+        progress_bar.empty()
+        status_text.empty()
+        
+        st.session_state['search_result'] = df
+        st.rerun()
             
     if 'search_result' in st.session_state:
         df = st.session_state['search_result']
