@@ -33,6 +33,38 @@ def get_candidate_tickers(date_str=None):
         print(f"시가총액 데이터 수집 실패: {e}")
         return pd.DataFrame()
 
+def get_global_indices():
+    """
+    KOSPI(KS11), KOSDAQ(KQ11), S&P500(US500), NASDAQ(IXIC) 
+    4개 주요 글로벌 지수의 최근 등락 정보를 가져옵니다.
+    """
+    indices = {
+        'KOSPI': 'KS11',
+        'KOSDAQ': 'KQ11',
+        'S&P 500': 'US500', 
+        'NASDAQ': 'IXIC'
+    }
+    
+    results = {}
+    today = datetime.today()
+    start_date = today - timedelta(days=7) # 주말/휴일 고려 7일치
+    
+    for name, code in indices.items():
+        try:
+            df = fdr.DataReader(code, start_date, today)
+            if len(df) >= 2:
+                curr = df['Close'].iloc[-1]
+                prev = df['Close'].iloc[-2]
+                diff = curr - prev
+                pct = (diff / prev) * 100
+                results[name] = {"close": curr, "diff": diff, "pct": pct}
+            else:
+                results[name] = {"close": 0, "diff": 0, "pct": 0}
+        except Exception as e:
+            results[name] = {"close": 0, "diff": 0, "pct": 0}
+            
+    return results
+
 def run_strategy(ticker, today=None):
     """
     단일 종목에 대해 A~G 조건을 평가하여 점수(score, 100점 만점)와 
@@ -207,12 +239,17 @@ def run_strategy(ticker, today=None):
         except:
              details['G'] = "Error"
              
+             
         pass_str = ",".join(pass_points) if pass_points else "None"
         
-        return round(score, 1), details, current_close, current_chg_pct, pass_str, df, markers
+        # 주식 차트 멀티 프레임을 위한 주봉(Weekly), 월봉(Monthly) 데이터 리샘플링 생성
+        df_weekly = df.resample('W-Fri').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'}).dropna()
+        df_monthly = df.resample('M').agg({'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'}).dropna()
+        
+        return round(score, 1), details, current_close, current_chg_pct, pass_str, df, df_weekly, df_monthly, markers
         
     except Exception as e:
-        return 0, {}, 0, 0, "Error", pd.DataFrame(), {}
+        return 0, {}, 0, 0, "Error", pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), {}
 
 def scan_hot_stocks(limit=50, progress_callback=None):
     """
@@ -232,7 +269,7 @@ def scan_hot_stocks(limit=50, progress_callback=None):
     names_dict = df_cap['Name'].to_dict()
     
     for i, tk in enumerate(tickers):
-        score, details, price, chg_pct, pass_str, df_chart, markers = run_strategy(tk)
+        score, details, price, chg_pct, pass_str, df_chart, df_w, df_m, markers = run_strategy(tk)
         
         name = names_dict.get(tk, tk)
         
@@ -248,9 +285,11 @@ def scan_hot_stocks(limit=50, progress_callback=None):
                 '시가총액(억)': market_cap_100m,
                 '적합도 점수': score,
                 '조건만족': pass_str,
-                '_chart_df': df_chart,         # UI 전달용 숨김 데이터
-                '_markers': markers,           # 오버레이 마커용 숨김 데이터
-                '_details': details            # 점수 산정 세부 내역 숨김 데이터
+                '_chart_df': df_chart,         # 일별(단기) 차트
+                '_chart_w': df_w,              # 주별(중기) 차트
+                '_chart_m': df_m,              # 월별(장기) 차트
+                '_markers': markers,           # 오버레이 마커용 
+                '_details': details            # 점수 산정 세부 내역 
             })
             
         if progress_callback:
