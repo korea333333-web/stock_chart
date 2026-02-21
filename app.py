@@ -32,45 +32,11 @@ st.set_page_config(
 def main():
     config = load_config()
     
-    # --- 사이드바: 알림 설정 관리 ---
-    with st.sidebar:
-        st.header("⚙️ 알림 수신 설정")
-        st.markdown("여기에서 알림을 받을 이메일과 텔레그램 대화방(Chat ID)을 관리할 수 있습니다.")
-        
-        # 보내는 사람 설정 (이메일 발송용)
-        st.subheader("📤 발송자 설정 (구글)")
-        st.markdown("알림을 '보낼' 구글 계정과 앱 비밀번호를 입력하세요.")
-        sender_email = st.text_input("발신용 구글 이메일", value=config.get("sender", {}).get("email", ""))
-        sender_passwd = st.text_input("앱 비밀번호 (16자리)", value=config.get("sender", {}).get("app_password", ""), type="password")
-
-        # 이메일 설정란
-        st.subheader("📧 수신 이메일 목록")
-        st.markdown("알림을 '받을' 이메일 주소들입니다.")
-        emails_text = st.text_area("수신 이메일 (줄바꿈 구분)", value="\n".join(config.get("emails", [])), height=100)
-        
-        # 텔레그램 설정란 (숨김 또는 유지 - 현재 카톡 제외, 이메일 중심)
-        with st.expander("💬 텔레그램 설정 (선택사항)"):
-            bot_token = st.text_input("Bot Token", value=config.get("telegram", {}).get("bot_token", ""))
-            chat_ids_text = st.text_area("Chat IDs", value="\n".join(config.get("telegram", {}).get("chat_ids", [])), height=70)
-        
-        # 저장 버튼
-        if st.button("설정 저장하기", use_container_width=True):
-            new_emails = [e.strip() for e in emails_text.split('\n') if e.strip()]
-            new_chat_ids = [c.strip() for c in chat_ids_text.split('\n') if c.strip()]
-            
-            config["sender"] = {"email": sender_email.strip(), "app_password": sender_passwd.strip()}
-            config["emails"] = new_emails
-            if "telegram" not in config:
-                config["telegram"] = {}
-            config["telegram"]["bot_token"] = bot_token.strip()
-            config["telegram"]["chat_ids"] = new_chat_ids
-            
-            save_config(config)
-            st.success("설정이 성공적으로 저장되었습니다!")
 
     # 1. 헤더 영역 (제목 및 설명: 프리미엄 디자인)
     st.markdown("<h1 style='text-align: center; color: #1E3A8A;'>✨ 프리미엄 주식 분석 & AI 타점 어드바이저</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #6B7280; font-size: 1.1rem;'>📊 대표님만의 투자 철학(A~G)을 완벽하게 계량화하여 최적의 매수 타점을 실시간으로 찾아냅니다.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #6B7280; font-size: 1.1rem;'>📊 대표님의 투자 철학(A~G)을 완벽하게 계량화하여 최적의 매수 타점을 실시간으로 찾아냅니다.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #10B981; font-size: 1.0rem;'>맨 아래 <b>[수신 설정]</b>에 이메일과 텔레그램 ID를 기입해 두시면 봇이 다른 분들에게도 분석 리포트를 알아서 발송해 드립니다! 🚀</p>", unsafe_allow_html=True)
     st.markdown("---")
     
     # 1.5 글로벌 & 국내 주요 증시 현황 위젯 추가
@@ -293,6 +259,44 @@ def main():
             * **+알파 [펀더멘털]:** 영업이익 10억 이상 & 시가총액 500억 이상
             """
         )
+        
+    # ==============================================================
+    # 6. 알림 수신 설정 영역 (사이드바에서 화면 최하단으로 이동 및 깔끔하게 개편)
+    # ==============================================================
+    st.markdown("---")
+    st.markdown("<h3 style='color: #4B5563;'>🔔 자동 알림 수신자 설정 (이메일 & 텔레그램)</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #6B7280; margin-bottom: 20px;'>대표님뿐만 아니라 팀원, 지인들도 이 자동 분석 리포트를 받아볼 수 있도록 수신처를 쉽게 관리하세요. (발신 비밀번호 등은 내부에 안전하게 저장되어 숨겨져 있습니다.)</p>", unsafe_allow_html=True)
+    
+    col_em, col_tg = st.columns(2)
+    with col_em:
+        st.markdown("**📧 리포트를 받을 이메일 주소**")
+        emails_str = st.text_area(
+            label="이메일 (엔터로 줄바꿈하여 여러 명 입력 가능)", 
+            value="\n".join(config.get("emails", [])), 
+            height=120,
+            label_visibility="collapsed"
+        )
+        config["emails"] = [e.strip() for e in emails_str.split("\n") if e.strip()]
+        
+    with col_tg:
+        st.markdown("**✈️ 리포트를 받을 텔레그램 ID**")
+        chat_ids_str = st.text_area(
+            label="텔레그램 ID (엔터로 줄바꿈하여 여러 명 입력 가능)", 
+            value="\n".join(config.get("telegram", {}).get("chat_ids", [])),
+            height=120,
+            label_visibility="collapsed"
+        )
+        bot_token = config.get("telegram", {}).get("bot_token", "") # 토큰은 기존 값 그대로 유지 (숨김)
+        config["telegram"] = {"bot_token": bot_token, "chat_ids": [cid.strip() for cid in chat_ids_str.split("\n") if cid.strip()]}
+        
+    # 발신자 정보는 UI 노출 없이 기존 값 그대로 유지
+    sender_email = config.get("sender", {}).get("email", "")
+    sender_pw = config.get("sender", {}).get("app_password", "")
+    config["sender"] = {"email": sender_email, "app_password": sender_pw}
+    
+    if st.button("💾 위 이메일과 텔레그램 리스트를 최종 수신자로 저장하기", type="primary", use_container_width=True):
+        save_config(config)
+        st.success("✅ 수신자 명단이 완벽하게 저장되었습니다! 이제 설정된 사람들에게 발송됩니다.")
 
 if __name__ == "__main__":
     main()
