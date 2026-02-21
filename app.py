@@ -305,22 +305,25 @@ def main():
                                 )
                                 
                         fig.update_layout(
-                            title=f"<b>{tk_name}</b> {title_ext}", yaxis_title="주가 (원)", xaxis_rangeslider_visible=False,
-                            template="plotly_white", height=500, margin=dict(l=20, r=20, t=50, b=20)
+                            yaxis_title="주가 (원)", xaxis_rangeslider_visible=False,
+                            template="plotly_white", height=500, margin=dict(l=20, r=20, t=30, b=20)
                         )
                         return fig
 
-                    # 각 탭에 차트 렌더링
+                    # 각 탭에 차트 렌더링 (차트 제목을 Plotly 내부가 아닌 외부에 배치하여 UI 겹침 방지)
                     with tab_daily:
-                        st.plotly_chart(create_candlestick(chart_df_d, "단기 150일 (일봉) 차트 및 타점 분석", show_overlay=True), use_container_width=True)
+                        st.markdown(f"<h4 style='color:#1F2937; margin-bottom:-10px;'>📊 {tk_name} 단기 150일 (일봉) 차트 및 타점 분석</h4>", unsafe_allow_html=True)
+                        st.plotly_chart(create_candlestick(chart_df_d, "", show_overlay=True), use_container_width=True)
                     with tab_weekly:
+                        st.markdown(f"<h4 style='color:#1F2937; margin-bottom:-10px;'>📊 {tk_name} 중기 (주봉) 흐름</h4>", unsafe_allow_html=True)
                         if not chart_df_w.empty:
-                            st.plotly_chart(create_candlestick(chart_df_w, "중기 (주봉) 흐름", show_overlay=False), use_container_width=True)
+                            st.plotly_chart(create_candlestick(chart_df_w, "", show_overlay=False), use_container_width=True)
                         else:
                             st.info("주봉 데이터를 표시할 수 없습니다.")
                     with tab_monthly:
+                        st.markdown(f"<h4 style='color:#1F2937; margin-bottom:-10px;'>📊 {tk_name} 장기 (월봉) 흐름</h4>", unsafe_allow_html=True)
                         if not chart_df_m.empty:
-                            st.plotly_chart(create_candlestick(chart_df_m, "장기 (월봉) 흐름", show_overlay=False), use_container_width=True)
+                            st.plotly_chart(create_candlestick(chart_df_m, "", show_overlay=False), use_container_width=True)
                         else:
                             st.info("월봉 데이터를 표시할 수 없습니다.")
                     
