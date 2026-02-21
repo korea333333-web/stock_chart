@@ -121,8 +121,16 @@ def main():
             """, unsafe_allow_html=True)
             
             def highlight_high_score(val):
-                color = '#d4edda' if isinstance(val, (int, float)) and val >= 90 else ''
-                return f'background-color: {color}'
+                if not isinstance(val, (int, float)):
+                    return ''
+                if val >= 85:
+                    return 'background-color: #d1fae5; color: #065f46; font-weight: bold;' # 초록
+                elif val >= 70:
+                    return 'background-color: #fef3c7; color: #92400e; font-weight: bold;' # 노랑
+                elif val < 50:
+                    return 'background-color: #fee2e2; color: #991b1b; font-weight: bold;' # 빨강
+                else:
+                    return 'background-color: #f3f4f6; color: #374151; font-weight: bold;' # 회색
             
             # ========================================================
             # 표 렌더링 (숨김 컬럼 제외)
@@ -130,8 +138,11 @@ def main():
             display_columns = [col for col in df.columns if not col.startswith('_')]
             df_display = df[display_columns]
             
+            # 소수점 1자리 고정 및 색상 적용
+            styled_df = df_display.style.map(highlight_high_score, subset=['적합도 점수']).format({'적합도 점수': '{:.1f}'})
+            
             st.dataframe(
-                df_display.style.map(highlight_high_score, subset=['적합도 점수']),
+                styled_df,
                 hide_index=True
             )
             
