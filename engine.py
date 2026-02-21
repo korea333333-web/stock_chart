@@ -3,6 +3,10 @@ import numpy as np
 import FinanceDataReader as fdr
 from datetime import datetime, timedelta
 import warnings
+import urllib.request
+import urllib.parse
+import xml.etree.ElementTree as ET
+import ssl
 
 warnings.filterwarnings('ignore')
 
@@ -62,6 +66,59 @@ def get_global_indices():
                 results[name] = {"close": 0, "diff": 0, "pct": 0}
         except Exception as e:
             results[name] = {"close": 0, "diff": 0, "pct": 0}
+            
+    return results
+
+def get_latest_news():
+    """Google News RSS를 활용하여 주요 키워드별 최신 기사를 5개씩 가져옵니다."""
+    results = {}
+    
+    # 카테고리별 검색어 (검색어, hl, gl, ceid)
+    queries = {
+        "🇰🇷 한국 증시 (국내 뉴스)": ("한국 증시", "ko", "KR", "KR:ko"),
+        "🇰🇷 한국 경제 (국내 뉴스)": ("한국 경제", "ko", "KR", "KR:ko"),
+        "🇺🇸 미국 증시 (국내 뉴스)": ("미국 증시", "ko", "KR", "KR:ko"),
+        "🇺🇸 미국 경제 (국내 뉴스)": ("미국 경제", "ko", "KR", "KR:ko"),
+        "🌎 외신이 본 KOREA (NYT/Reuters 등)": ("South Korea economy OR South Korea stock OR KOSPI", "en-US", "US", "US:en")
+    }
+    
+    # SSL 우회 설정 (특정 환경 오류 방지)
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+
+    for title, (q, hl, gl, ceid) in queries.items():
+        encoded_q = urllib.parse.quote(q)
+        url = f"https://news.google.com/rss/search?q={encoded_q}&hl={hl}&gl={gl}&ceid={ceid}"
+        
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, context=ctx, timeout=5) as response:
+                xml_data = response.read()
+            
+            root = ET.fromstring(xml_data)
+            items = []
+            for item in root.findall('.//item')[:5]: # 기사는 딱 5개만 제한
+                news_title = item.find('title').text
+                news_link = item.find('link').text
+                
+                # 출처(source) 요소 찾기
+                source_node = item.find('source')
+                source_name = source_node.text if source_node is not None else "Unknown"
+                
+                # 퍼블리시 시간
+                pub_date = item.find('pubDate')
+                pub_text = pub_date.text if pub_date is not None else ""
+                
+                # ' - 출처' 형태가 제목에 붙어있는 경우 정리
+                if f" - {source_name}" in news_title:
+                    news_title = news_title.replace(f" - {source_name}", "")
+                    
+                items.append({"title": news_title, "link": news_link, "source": source_name, "date": pub_text})
+            
+            results[title] = items
+        except Exception as e:
+            results[title] = [] # 에러 시 빈 리스트
             
     return results
 

@@ -295,6 +295,30 @@ def main():
         )
         
     # ==============================================================
+    # 5.5 주요 글로벌/국내 경제 뉴스 클리핑 영역
+    # ==============================================================
+    st.markdown("---")
+    st.markdown("<h3 style='color: #4B5563;'>📰 오늘의 주요 경제/증시 뉴스 (국내 및 외신 큐레이션)</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #6B7280; font-size: 0.95rem; margin-bottom: 20px;'>한국과 미국의 핵심 뉴스를 국내 언론 시각과 유력 외신(NYT 등) 시각으로 나누어 엄선된 5개씩 제공합니다.</p>", unsafe_allow_html=True)
+    
+    with st.spinner("최신 글로벌 뉴스를 실시간으로 수집하고 있습니다... (약 1~2초 소요)"):
+        news_data = engine.get_latest_news()
+        
+    if news_data:
+        # 뉴스 카테고리별로 탭 생성
+        tabs = st.tabs(list(news_data.keys()))
+        for tab, (category, items) in zip(tabs, news_data.items()):
+            with tab:
+                if items:
+                    for item in items:
+                        # 깔끔한 하이퍼링크 리스트 형태로 출력
+                        st.markdown(f"🏢 **[{item['source']}]** &nbsp;&nbsp; <a href='{item['link']}' target='_blank' style='text-decoration:none; color:#1F2937; font-weight:500;'>{item['title']}</a> &nbsp;&nbsp; <span style='color:#9CA3AF; font-size:0.8rem;'>{item['date']}</span>", unsafe_allow_html=True)
+                else:
+                    st.info("현재 시간 기준으로 관련 최신 뉴스를 불러오지 못했습니다.")
+    else:
+        st.warning("뉴스 검색 서버 상태가 불안정합니다.")
+        
+    # ==============================================================
     # 6. 알림 수신 설정 영역 (사이드바에서 화면 최하단으로 이동 및 깔끔하게 개편)
     # ==============================================================
     st.markdown("---")
