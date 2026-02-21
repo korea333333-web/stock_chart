@@ -7,3 +7,6 @@ requests
 beautifulsoup4
 lxml
 setuptools
+deprecated
+matplotlib
+multipledispatch
