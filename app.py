@@ -148,6 +148,29 @@ def main():
                 chart_df = target_row['_chart_df']
                 markers = target_row['_markers']
                 tk_name = target_row['종목명']
+                total_sc = target_row['적합도 점수']
+                
+                # 투자 적기 계산용 (우리의 만점 기준 100점에 대한 달성도)
+                # 80점 이상이면 매우 좋음, 60점 이상이면 보통 등
+                if total_sc >= 85:
+                    timing_status = "🔥 **매우 강력한 투자 적기** (대부분의 조건 완벽 부합)"
+                    color_theme = "normal"
+                elif total_sc >= 70:
+                    timing_status = "✅ **좋은 투자 적기** (조정장 매수 고려만 함)"
+                    color_theme = "normal"
+                elif total_sc >= 50:
+                    timing_status = "⚠️ **관망 필요** (일부 조건만 부합, 아직 무르익지 않음)"
+                    color_theme = "off"
+                else:
+                    timing_status = "❄️ **투자 부적합** (현재 우리가 원하는 타점이 아님)"
+                    color_theme = "inverse"
+                
+                # 요약 대시보드 표시
+                col1, col2 = st.columns([1, 2])
+                with col1:
+                    st.metric(label=f"🎯 [{tk_name}] 투자 적기 (조건 부합도)", value=f"{total_sc}%", delta=timing_status, delta_color=color_theme)
+                with col2:
+                    st.info(f"💡 시스템 한줄평: 이 종목은 오늘 기준으로 대표님의 철학에 **{total_sc}%** 만큼 가까워진 타점입니다.")
                 
                 if not chart_df.empty:
                     # Plotly 차트 객체 캔버스 생성
@@ -200,8 +223,7 @@ def main():
                     
                     st.plotly_chart(fig, use_container_width=True)
                     
-                    # 하단 코멘트
-                    st.info(f"💡 시스템 한줄평: {tk_name} 종목은 조건 중 [{target_row['조건만족']}] 항목에서 점수를 획득했습니다.")
+                    st.plotly_chart(fig, use_container_width=True)
                     
                     # 상세 점수 내역 (왜 이 점수를 받았는가?)
                     with st.expander(f"📊 {tk_name} 종목의 총점 {target_row['적합도 점수']}점 획득 내역 자세히 보기", expanded=True):
