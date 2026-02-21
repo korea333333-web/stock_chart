@@ -47,11 +47,27 @@ def main():
             i_col1, i_col2, i_col3, i_col4 = st.columns(4)
             for idx, (col, (name, data)) in enumerate(zip([i_col1, i_col2, i_col3, i_col4], indices.items())):
                 with col:
-                    st.metric(
-                        label=name, 
-                        value=f"{data['close']:,.2f}", 
-                        delta=f"{data['diff']:,.2f} ({data['pct']:.2f}%)"
-                    )
+                    diff_val = data['diff']
+                    pct_val = data['pct']
+                    if diff_val > 0:
+                        txt_color = "#EF4444" # 빨강 (한국형 상승)
+                        arrow = "▲"
+                    elif diff_val < 0:
+                        txt_color = "#3B82F6" # 파랑 (한국형 하락)
+                        arrow = "▼"
+                    else:
+                        txt_color = "#6B7280" # 회색 (보합)
+                        arrow = "-"
+                        
+                    st.markdown(f"""
+                    <div style='background-color: #FAFAFA; padding: 15px; border-radius: 10px; border: 1px solid #E5E7EB; text-align: center;'>
+                        <p style='margin:0; font-size:14px; color:#4B5563; font-weight:600;'>{name}</p>
+                        <h3 style='margin:5px 0 0 0; color:#1F2937;'>{data['close']:,.2f}</h3>
+                        <p style='margin:5px 0 0 0; font-size:15px; font-weight:bold; color:{txt_color};'>
+                            {arrow} {abs(diff_val):,.2f} ({pct_val:.2f}%)
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
         else:
             st.info("실시간 증시 데이터를 불러오는 중입니다.")
     except Exception as e:
@@ -176,7 +192,9 @@ def main():
                     def create_candlestick(df_data, title_ext, show_overlay=False):
                         fig = go.Figure()
                         fig.add_trace(go.Candlestick(
-                            x=df_data.index, open=df_data['Open'], high=df_data['High'], low=df_data['Low'], close=df_data['Close'], name='주가'
+                            x=df_data.index, open=df_data['Open'], high=df_data['High'], low=df_data['Low'], close=df_data['Close'], name='주가',
+                            increasing_line_color='#EF4444', decreasing_line_color='#3B82F6', # 한국형 점등 (빨강/파랑)
+                            increasing_fillcolor='#EF4444', decreasing_fillcolor='#3B82F6'
                         ))
                         # 이동평균선(MA는 일봉에만 제공 중이므로 일봉 탭에만 그림)
                         if show_overlay and 'MA5' in df_data.columns:
