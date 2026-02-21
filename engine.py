@@ -4,9 +4,9 @@ import FinanceDataReader as fdr
 from datetime import datetime, timedelta
 import warnings
 import urllib.request
-import urllib.parse
 import xml.etree.ElementTree as ET
 import ssl
+from googletrans import Translator
 
 warnings.filterwarnings('ignore')
 
@@ -97,7 +97,8 @@ def get_latest_news():
                 xml_data = response.read()
             
             root = ET.fromstring(xml_data)
-            items = []
+            translator = Translator()
+            
             for item in root.findall('.//item')[:5]: # 기사는 딱 5개만 제한
                 news_title = item.find('title').text
                 news_link = item.find('link').text
@@ -114,7 +115,21 @@ def get_latest_news():
                 if f" - {source_name}" in news_title:
                     news_title = news_title.replace(f" - {source_name}", "")
                     
-                items.append({"title": news_title, "link": news_link, "source": source_name, "date": pub_text})
+                # [추가] 외신 채널의 경우 한국어 번역본 제공
+                translated_title = ""
+                if "외신" in title or "US" in gl:
+                    try:
+                        translated_title = translator.translate(news_title, dest='ko').text
+                    except Exception as trans_e:
+                        translated_title = "(번역 실패)"
+                        
+                items.append({
+                    "title": news_title, 
+                    "title_ko": translated_title,
+                    "link": news_link, 
+                    "source": source_name, 
+                    "date": pub_text
+                })
             
             results[title] = items
         except Exception as e:

@@ -311,8 +311,21 @@ def main():
             with tab:
                 if items:
                     for item in items:
+                        # 번역본이 존재하는 외신 기사일 경우 처리
+                        ko_title_html = ""
+                        translated_text = item.get("title_ko", "")
+                        if translated_text and translated_text != "(번역 실패)":
+                            ko_title_html = f"<div style='margin-left:5px; color:#2563EB; font-weight:bold; font-size:0.95rem;'>🇰🇷 {translated_text}</div>"
+                            
                         # 깔끔한 하이퍼링크 리스트 형태로 출력
-                        st.markdown(f"🏢 **[{item['source']}]** &nbsp;&nbsp; <a href='{item['link']}' target='_blank' style='text-decoration:none; color:#1F2937; font-weight:500;'>{item['title']}</a> &nbsp;&nbsp; <span style='color:#9CA3AF; font-size:0.8rem;'>{item['date']}</span>", unsafe_allow_html=True)
+                        st.markdown(f"""
+                        <div style='margin-bottom: 12px;'>
+                            🏢 **[{item['source']}]** &nbsp;&nbsp; 
+                            <a href='{item['link']}' target='_blank' style='text-decoration:none; color:#1F2937; font-weight:500;'>{item['title']}</a> 
+                            &nbsp;&nbsp; <span style='color:#9CA3AF; font-size:0.8rem;'>{item['date']}</span>
+                            {ko_title_html}
+                        </div>
+                        """, unsafe_allow_html=True)
                 else:
                     st.info("현재 시간 기준으로 관련 최신 뉴스를 불러오지 못했습니다.")
     else:
