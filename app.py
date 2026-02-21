@@ -80,9 +80,14 @@ def main():
     st.info(f"마지막 데이터 수집 시간: **{current_time}**")
     
     # 3. 실시간 주식 데이터 검색 (엔진 연동)
-    st.subheader("📈 실시간 검색 결과")
+    st.markdown("<br><h2 style='text-align: center; color: #111827;'>🎯 프리미엄 AI 종목 분석 및 매수 타점 스캔</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #6B7280; font-size: 15px;'>버튼을 누르시면 코스피/코스닥 전 종목의 차트 데이터를 바탕으로 최고의 타점을 찾습니다.</p>", unsafe_allow_html=True)
     
-    if st.button("🚀 지금 실시간 검색 돌리기", type="primary", use_container_width=True):
+    col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1]) # 가운데 정렬을 위한 꼼수 배치
+    with col_btn2:
+        start_search = st.button("✨ 오늘의 1순위 투자 적기 종목 스캔 시작하기", type="primary", use_container_width=True)
+        
+    if start_search:
         st.info("코스피/코스닥 시가총액 상위 종목들을 스캔 중입니다... (속도를 위해 상위 30종목 1차 스캔)")
         
         # 진행 상태를 표시할 빈 공간(영역) 생성
