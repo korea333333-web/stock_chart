@@ -36,31 +36,30 @@ def main():
     # --- 시안 기반 커스텀 프리미엄 CSS 주입 ---
     st.markdown("""
     <style>
-        /* 기본 폰트를 시안과 유사한 세리프/클래식 느낌으로 강제 변경 */
+        /* 기본 폰트 변경 및 전체 배경색 덮어쓰기 (크림색 베이지 톤) */
         html, body, [class*="css"], .stApp {
             font-family: 'Times New Roman', Times, serif !important;
-            background-color: #F8F9FA !important; /* 전체 배경을 포근한 아이보리 톤으로 */
+            background-color: #f7f6f2 !important; 
         }
         
-        /* 메인 컨테이너 최대 너비 확장 */
-        .block-container {
-            max-width: 1200px !important;
-            padding-top: 2rem !important;
-        }
-        
-        /* 헤더 글로벌 배너 스타일 */
+        /* 헤더 글로벌 배너 스타일 (Streamlit 경계선을 뚫고 나가는 Full-width 트릭) */
         .premium-header {
-            background-color: #1A3626; /* 딥 그린 */
-            padding: 40px 20px;
-            border-radius: 0px 0px 15px 15px;
-            margin-top: -60px; /* Streamlit 기본 여백 제거용 */
-            margin-bottom: 30px;
+            width: 100vw;
+            position: relative;
+            left: 50%;
+            right: 50%;
+            margin-left: -50vw;
+            margin-right: -50vw;
+            background-color: #1A3626; /* 딥그린 */
+            padding: 50px 20px 60px 20px;
+            margin-top: -4rem; /* 기본 여백 상쇄 */
+            margin-bottom: 40px;
             text-align: center;
         }
         
         .header-title {
             color: #FFFFFF;
-            font-size: 2.8rem;
+            font-size: 3.2rem;
             font-weight: bold;
             letter-spacing: 1px;
             margin: 0 0 10px 0;
@@ -76,18 +75,34 @@ def main():
             color: #A3B8A8;
             font-size: 1.1rem;
             font-style: italic;
-            margin: 0 0 15px 0;
+            margin: 0 0 20px 0;
             letter-spacing: 0.5px;
         }
         
         .header-badge {
             display: inline-block;
             background-color: #234731;
-            color: #D4AF37; # 골드
-            padding: 5px 15px;
+            color: #D4AF37; /* 골드 */
+            padding: 6px 18px;
             border-radius: 20px;
             font-size: 0.85rem;
             border: 1px solid #3A5F48;
+        }
+        
+        /* 메인 버튼 스타일 (프리미엄 딥그린) */
+        div[data-testid="stButton"] > button {
+            background-color: #1A3626 !important;
+            color: #D4AF37 !important;
+            border: 1px solid #D4AF37 !important;
+            border-radius: 5px !important;
+            font-weight: bold !important;
+            font-family: 'Times New Roman', Times, serif !important;
+            transition: all 0.3s ease !important;
+        }
+        div[data-testid="stButton"] > button:hover {
+            background-color: #D4AF37 !important;
+            color: #1A3626 !important;
+            border: 1px solid #1A3626 !important;
         }
         
         /* 섹션 제목 스타일 */
@@ -96,11 +111,20 @@ def main():
             font-size: 1.8rem;
             font-weight: bold;
             margin-bottom: 20px;
-            border-bottom: 2px solid #E5E7EB;
+            border-bottom: 2px solid #D4AF37; /* 밑줄을 골드 색상으로 */
             padding-bottom: 10px;
             font-family: 'Times New Roman', Times, serif;
         }
         
+        /* 메트릭 카드(증시 현황) 등 주요 박스를 흰색으로 빼고 그림자 부여 */
+        .market-card {
+            background-color: #FFFFFF !important;
+            padding: 20px !important;
+            border-radius: 12px !important;
+            border: 1px solid #EAEAEA !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03) !important;
+            text-align: center;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -135,11 +159,11 @@ def main():
                         arrow = "-"
                         
                     st.markdown(f"""
-                    <div style='background-color: #FAFAFA; padding: 15px; border-radius: 10px; border: 1px solid #E5E7EB; text-align: center;'>
-                        <p style='margin:0; font-size:14px; color:#4B5563; font-weight:600;'>{name}</p>
-                        <h3 style='margin:5px 0 0 0; color:#1F2937;'>{data['close']:,.2f}</h3>
-                        <p style='margin:5px 0 0 0; font-size:15px; font-weight:bold; color:{txt_color};'>
-                            {arrow} {abs(diff_val):,.2f} ({pct_val:.2f}%)
+                    <div class='market-card'>
+                        <p style='margin:0; font-size:14px; color:#6B7280; font-weight:600; letter-spacing:1px;'>{name}</p>
+                        <h3 style='margin:10px 0; color:#111827; font-size:1.8rem;'>{data['close']:,.2f}</h3>
+                        <p style='margin:0; font-size:14px; font-weight:bold; color:{txt_color};'>
+                            {arrow} {abs(diff_val):,.2f} ({pct_val:.2f}%) <span>Since Open</span>
                         </p>
                     </div>
                     """, unsafe_allow_html=True)
@@ -150,20 +174,15 @@ def main():
         
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # 2. 검색 시간 정보 표시
-    current_time = datetime.now().strftime("%Y년 %m월 %d일 %H시 %M분")
-    st.info(f"마지막 데이터 수집 시간: **{current_time}**")
-    
     # 3. 실시간 주식 데이터 검색 (엔진 연동)
-    st.markdown("<br><h2 style='text-align: center; color: #111827;'>🎯 프리미엄 AI 종목 분석 및 매수 타점 스캔</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #6B7280; font-size: 15px;'>버튼을 누르시면 코스피/코스닥 전 종목의 차트 데이터를 바탕으로 최고의 타점을 찾습니다.</p>", unsafe_allow_html=True)
-    
-    col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1]) # 가운데 정렬을 위한 꼼수 배치
-    with col_btn2:
-        start_search = st.button("✨ 오늘의 1순위 투자 적기 종목 스캔 시작하기", type="primary", use_container_width=True)
+    col_title, col_btn = st.columns([3, 1])
+    with col_title:
+        st.markdown("<div class='section-title' style='margin-bottom: 0px; border: none; padding: 0;'>🔍 Real-time Analysis</div>", unsafe_allow_html=True)
+    with col_btn:
+        start_search = st.button("🚀 SCAN MARKET", type="primary", use_container_width=True)
         
     if start_search:
-        st.info("코스피/코스닥 시가총액 상위 종목들을 스캔 중입니다... (속도를 위해 상위 30종목 1차 스캔)")
+        st.info("Scanning Top Market Cap Stocks... Please wait.")
         
         # 진행 상태를 표시할 빈 공간(영역) 생성
         progress_bar = st.progress(0)
@@ -173,7 +192,7 @@ def main():
         def update_progress(current, total, current_ticker_name):
             percent = int((current / total) * 100)
             progress_bar.progress(percent)
-            status_text.text(f"스캔 진행 중... {current}/{total} (현재 분석 중: {current_ticker_name})")
+            status_text.text(f"Scanning... {current}/{total} (Analyzing: {current_ticker_name})")
             
         # 엔진 실행 (limit=30 으로 조정하여 속도 향상, 콜백 함수 연결)
         df = engine.scan_hot_stocks(limit=30, progress_callback=update_progress)
@@ -188,43 +207,83 @@ def main():
     if 'search_result' in st.session_state:
         df = st.session_state['search_result']
         if not df.empty:
-            st.success("✅ 종목 스캔 완료! (점수순으로 정렬되었습니다)")
-            
-            # 🟢🟡🔴 직관적인 적합도 점수 상태 가이드라인 (범례)
             st.markdown("""
-            <div style='background-color: #F3F4F6; padding: 10px; border-radius: 5px; margin-bottom: 10px;'>
-                <b>🛡️ 점수별 투자 가이드라인 (Legend)</b><br>
-                <span style='color: green;'>🟢 <b>85점 이상:</b> 당장 분석 후 강력 매수 고려 (조건 완벽 일치)</span> &nbsp;|&nbsp; 
-                <span style='color: orange;'>🟡 <b>70점 이상:</b> 좋은 흐름, 분할 매수 및 관심 주시</span> &nbsp;|&nbsp; 
-                <span style='color: red;'>🔴 <b>50점 미만:</b> 아직 무르익지 않음 (관망)</span>
+            <div style='background-color: #F8F9FA; border-left: 4px solid #D4AF37; padding: 10px 15px; margin-bottom: 20px;'>
+                <b style='color: #1A3626;'>Analysis Complete</b><br>
+                <span style='color: #6B7280; font-size: 14px;'>Stocks are sorted by compatibility score based on your investment philosophy.</span>
             </div>
             """, unsafe_allow_html=True)
             
-            def highlight_high_score(val):
-                if not isinstance(val, (int, float)):
-                    return ''
-                if val >= 85:
-                    return 'background-color: #d1fae5; color: #065f46; font-weight: bold;' # 초록
-                elif val >= 70:
-                    return 'background-color: #fef3c7; color: #92400e; font-weight: bold;' # 노랑
-                elif val < 50:
-                    return 'background-color: #fee2e2; color: #991b1b; font-weight: bold;' # 빨강
-                else:
-                    return 'background-color: #f3f4f6; color: #374151; font-weight: bold;' # 회색
+            # 🟢🟡🔴 직관적인 적합도 점수 상태 가이드라인 (범례) - 영문 시안 버전 적용
+            st.markdown("""
+            <div style='background-color: #FFFFFF; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #EAEAEA; box-shadow: 0 2px 5px rgba(0,0,0,0.02);'>
+                <p style='margin: 0 0 10px 0; font-size: 13px; font-weight: bold; color: #1A3626;'>📜 SCORE LEGEND</p>
+                <span style='color: #065F46; font-weight: bold;'>◆ 85+</span> <span style='color:#555; font-size:14px;'>Strong Buy</span> &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; 
+                <span style='color: #D4AF37; font-weight: bold;'>◆ 70+</span> <span style='color:#555; font-size:14px;'>Accumulate</span> &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; 
+                <span style='color: #991B1B; font-weight: bold;'>◆ &lt; 50</span> <span style='color:#555; font-size:14px;'>Hold / Watch</span>
+            </div>
+            """, unsafe_allow_html=True)
             
             # ========================================================
-            # 표 렌더링 (숨김 컬럼 제외)
+            # 표 렌더링 (Custom HTML Table to match the exact mockup design)
             # ========================================================
-            display_columns = [col for col in df.columns if not col.startswith('_')]
-            df_display = df[display_columns]
-            
-            # 소수점 1자리 고정 및 색상 적용
-            styled_df = df_display.style.map(highlight_high_score, subset=['적합도 점수']).format({'적합도 점수': '{:.1f}'})
-            
-            st.dataframe(
-                styled_df,
-                hide_index=True
-            )
+            table_html = """
+            <style>
+            .premium-table { width: 100%; border-collapse: collapse; font-family: 'Times New Roman', serif; font-size: 14px; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+            .premium-table th { background-color: #1A3626; color: white; padding: 12px 15px; text-align: left; font-weight: normal; letter-spacing: 1px; font-size: 12px; }
+            .premium-table td { padding: 12px 15px; border-bottom: 1px solid #F0F0F0; color: #333; vertical-align: middle; }
+            .premium-table tr:last-child td { border-bottom: none; }
+            .score-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: bold; border: 1px solid #CCC; color: #555; }
+            .score-high { color: #065F46; border-color: #065F46; background-color: #E8F5E9; }
+            .score-mid { color: #92400E; border-color: #D4AF37; background-color: #FEF3C7; }
+            .score-low { color: #991B1B; border-color: #991B1B; background-color: #FEE2E2; }
+            .cond-badge { display: inline-block; background-color: #F8F9FA; border: 1px solid #E5E7EB; color: #6B7280; padding: 2px 7px; border-radius: 3px; font-size: 11px; margin-right: 4px; }
+            </style>
+            <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>CODE</th>
+                    <th>NAME</th>
+                    <th>PRICE (KRW)</th>
+                    <th>CHANGE</th>
+                    <th>OP. PROFIT</th>
+                    <th>MARKET CAP</th>
+                    <th>SCORE</th>
+                    <th>CONDITIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+            """
+            for idx, row in df.iterrows():
+                score = row['적합도 점수']
+                if score >= 85: score_class = "score-high"
+                elif score >= 70: score_class = "score-mid"
+                else: score_class = "score-low"
+                
+                change_val = row['등락률(%)']
+                if change_val > 0: change_str = f"<span style='color: #EF4444; font-weight: bold;'>{change_val:.2f}%</span>"
+                elif change_val < 0: change_str = f"<span style='color: #3B82F6; font-weight: bold;'>{change_val:.2f}%</span>"
+                else: change_str = f"<span style='color: #6B7280;'>0.00%</span>"
+                
+                cond_str = ""
+                for c in row['조건만족'].split(','):
+                    if c.strip() != 'None':
+                        cond_str += f"<span class='cond-badge'>{c.strip()}</span>"
+                
+                table_html += f"""
+                <tr>
+                    <td style='color: #888;'>{row['종목코드']}</td>
+                    <td style='font-weight: bold; color: #111;'>{row['종목명']}</td>
+                    <td>{row['현재가(원)']:,.0f}</td>
+                    <td>{change_str}</td>
+                    <td style='color: #999;'>Pending</td>
+                    <td>{int(row['시가총액(억)']):,}</td>
+                    <td><span class='score-badge {score_class}'>{score:.1f}</span></td>
+                    <td>{cond_str}</td>
+                </tr>
+                """
+            table_html += "</tbody></table>"
+            st.markdown(table_html, unsafe_allow_html=True)
             
             # 발송 테스트 연동용 코드 (나중에 자동화 시 활용)
             high_score_items = df[df['적합도 점수'] >= 90]
@@ -234,123 +293,109 @@ def main():
             st.markdown("---")
             
             # ========================================================
-            # 시각적 차트 분석 UI (Plotly 캔들스틱 & 오버레이)
+            # Deep Dive Analysis UI (시안 완벽 매칭 2단 레이아웃)
             # ========================================================
-            st.subheader("📊 개별 종목 정밀 차트 분석")
+            st.markdown("""
+            <div style='display: flex; align-items: center; margin-top: 40px; margin-bottom: 20px;'>
+                <div class='section-title' style='margin-bottom: 0px; border: none; padding: 0;'>📊 Deep Dive Analysis</div>
+            </div>
+            """, unsafe_allow_html=True)
             
-            # 콤보박스에 종목 표시 (종목명 + 점수)
-            df['종목표시'] = df['종목명'] + " (" + df['적합도 점수'].astype(str) + "점)"
+            df['종목표시'] = df['종목명'] + " (Score: " + df['적합도 점수'].astype(str) + ")"
             
-            selected_display = st.selectbox("분석할 종목을 선택하세요 (높은 점수순 정렬):", df['종목표시'].tolist())
+            # 전체를 좌우 1:2 비율로 나눔
+            col_left, col_right = st.columns([1, 2])
             
-            if selected_display:
-                # 선택된 행(Row) 정보 추출
-                target_row = df[df['종목표시'] == selected_display].iloc[0]
-                chart_df_d = target_row['_chart_df']
-                chart_df_w = target_row.get('_chart_w', pd.DataFrame())
-                chart_df_m = target_row.get('_chart_m', pd.DataFrame())
-                markers = target_row['_markers']
-                tk_name = target_row['종목명']
-                total_sc = target_row['적합도 점수']
+            with col_left:
+                st.markdown("<p style='font-size: 11px; font-weight: bold; color: #333; margin-bottom: 5px; letter-spacing: 1px;'>SELECT STOCK</p>", unsafe_allow_html=True)
+                selected_display = st.selectbox("", df['종목표시'].tolist(), label_visibility="collapsed")
                 
-                # 투자 적기 계산용 (우리의 만점 기준 100점에 대한 달성도)
-                # 80점 이상이면 매우 좋음, 60점 이상이면 보통 등
-                if total_sc >= 85:
-                    timing_status = "🔥 **매우 강력한 투자 적기** (모든 조건 완벽 부합)"
-                    color_theme = "normal"
-                elif total_sc >= 70:
-                    timing_status = "✅ **좋은 투자 적기** (조정장 매수 고려)"
-                    color_theme = "normal"
-                elif total_sc >= 50:
-                    timing_status = "⚠️ **관망 필요** (일부 조건만 부합, 아직 무르익지 않음)"
-                    color_theme = "off"
-                else:
-                    timing_status = "❄️ **투자 부적합** (현재 우리가 원하는 타점이 아님)"
-                    color_theme = "inverse"
-                
-                # 요약 대시보드 표시
-                col1, col2 = st.columns([1, 2])
-                with col1:
-                    st.metric(label=f"🎯 [{tk_name}] 투자 적기 (조건 부합도)", value=f"{total_sc}%", delta=timing_status, delta_color=color_theme)
-                with col2:
-                    st.info(f"💡 시스템 한줄평: 이 종목은 오늘 기준으로 대표님의 철학에 **{total_sc}%** 만큼 가까워진 타점입니다.")
-                
-                if not chart_df_d.empty:
-                    # 멀티 프레임 차트 탭 구성
-                    tab_daily, tab_weekly, tab_monthly = st.tabs(["📈 단기 흐름 (일봉)", "📊 중기 흐름 (주봉)", "📅 장기 흐름 (월봉)"])
+                if selected_display:
+                    target_row = df[df['종목표시'] == selected_display].iloc[0]
+                    total_sc = target_row['적합도 점수']
                     
-                    # --- 공통 차트 생성 함수 ---
-                    def create_candlestick(df_data, title_ext, show_overlay=False):
-                        fig = go.Figure()
-                        fig.add_trace(go.Candlestick(
-                            x=df_data.index, open=df_data['Open'], high=df_data['High'], low=df_data['Low'], close=df_data['Close'], name='주가',
-                            increasing_line_color='#EF4444', decreasing_line_color='#3B82F6', # 한국형 점등 (빨강/파랑)
-                            increasing_fillcolor='#EF4444', decreasing_fillcolor='#3B82F6'
-                        ))
-                        # 이동평균선(MA는 일봉에만 제공 중이므로 일봉 탭에만 그림)
-                        if show_overlay and 'MA5' in df_data.columns:
-                            fig.add_trace(go.Scatter(x=df_data.index, y=df_data['MA5'], line=dict(color='magenta', width=1.5), name='5일선'))
-                            fig.add_trace(go.Scatter(x=df_data.index, y=df_data['MA20'], line=dict(color='orange', width=1.5), name='20일선'))
-                            fig.add_trace(go.Scatter(x=df_data.index, y=df_data['MA60'], line=dict(color='green', width=1.5), name='60일선'))
+                    # 딥그린 컴패티빌리티 스코어 박스
+                    st.markdown(f"""
+                    <div style='background-color: #1A3626; color: white; padding: 25px 20px; border-radius: 8px; margin-top: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; overflow: hidden;'>
+                        <p style='margin: 0; font-size: 11px; font-weight: normal; letter-spacing: 1px; color: #A3B8A8;'>COMPATIBILITY SCORE</p>
+                        <h2 style='margin: 10px 0; font-size: 3rem; color: #FFFFFF;'>{total_sc}<span style='color: #D4AF37; font-size: 1.5rem;'>%</span></h2>
+                        <div style='width: 30px; border-top: 2px solid #D4AF37; margin-bottom: 15px;'></div>
+                        <p style='margin: 0; font-size: 13px; color: #E5E7EB; line-height: 1.5;'>
+                            "Based on your criteria, this asset is currently showing a strong alignment with your portfolio strategy."
+                        </p>
+                        <div style='position: absolute; right: -20px; bottom: -20px; font-size: 8rem; opacity: 0.05;'>🎯</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # 시스템 평가 (체크리스트)
+                    st.markdown("""
+                    <div style='background-color: #F8F9FA; padding: 20px; border-radius: 8px; margin-top: 20px; border: 1px solid #EAEAEA;'>
+                        <p style='margin: 0 0 15px 0; font-size: 12px; font-weight: bold; color: #1A3626; letter-spacing: 1px;'>☑ SYSTEM EVALUATION</p>
+                    """, unsafe_allow_html=True)
+                    
+                    details = target_row.get('_details', {})
+                    check_list_html = ""
+                    # 주요 조건 3개만 샘플 노출
+                    key_map = {'A': 'Price Range Condition', 'B': 'Volume Threshold', 'D': 'Momentum (Spike)'}
+                    for k, label in key_map.items():
+                        status = details.get(k, "")
+                        if "Pass" in status:
+                            check_list_html += f"<p style='margin: 8px 0; color: #333; font-size: 14px;'><span style='color: #065F46;'>✔</span> {label} <span style='color:#888; font-size:12px;'>({status.replace('Pass', '')})</span></p>"
+                        else:
+                            check_list_html += f"<p style='margin: 8px 0; color: #999; font-size: 14px;'><span style='color: #EF4444;'>✘</span> {label}</p>"
                             
-                            # 조건 발생 지점 오버레이 마커 (일봉 전용)
-                            for condition_key, marker_info in markers.items():
-                                m_date, m_price, m_text = marker_info
-                                fig.add_annotation(
-                                    x=m_date, y=m_price, text=m_text, showarrow=True, arrowhead=2, arrowsize=1.5,
-                                    arrowcolor="Black" if condition_key != 'D_Spike' else "Red",
-                                    font=dict(color="White", size=12),
-                                    bgcolor="Blue" if condition_key == 'C_Low' else ("Red" if condition_key == 'D_Spike' else "Purple"),
-                                    bordercolor="Black", borderwidth=1, ay=-40
-                                )
-                                
-                        fig.update_layout(
-                            yaxis_title="주가 (원)", xaxis_rangeslider_visible=False,
-                            template="plotly_white", height=500, margin=dict(l=20, r=20, t=30, b=20)
-                        )
-                        return fig
-
-                    # 각 탭에 차트 렌더링 (차트 제목을 Plotly 내부가 아닌 외부에 배치하여 UI 겹침 방지)
-                    with tab_daily:
-                        st.markdown(f"<h4 style='color:#1F2937; margin-bottom:-10px;'>📊 {tk_name} 단기 150일 (일봉) 차트 및 타점 분석</h4>", unsafe_allow_html=True)
-                        st.plotly_chart(create_candlestick(chart_df_d, "", show_overlay=True), use_container_width=True)
-                    with tab_weekly:
-                        st.markdown(f"<h4 style='color:#1F2937; margin-bottom:-10px;'>📊 {tk_name} 중기 (주봉) 흐름</h4>", unsafe_allow_html=True)
-                        if not chart_df_w.empty:
-                            st.plotly_chart(create_candlestick(chart_df_w, "", show_overlay=False), use_container_width=True)
-                        else:
-                            st.info("주봉 데이터를 표시할 수 없습니다.")
-                    with tab_monthly:
-                        st.markdown(f"<h4 style='color:#1F2937; margin-bottom:-10px;'>📊 {tk_name} 장기 (월봉) 흐름</h4>", unsafe_allow_html=True)
-                        if not chart_df_m.empty:
-                            st.plotly_chart(create_candlestick(chart_df_m, "", show_overlay=False), use_container_width=True)
-                        else:
-                            st.info("월봉 데이터를 표시할 수 없습니다.")
+                    st.markdown(check_list_html + """
+                        <hr style='border: none; border-top: 1px solid #EAEAEA; margin: 15px 0;'>
+                        <button style='width: 100%; background: transparent; border: 1px solid #CCC; padding: 8px; border-radius: 4px; color: #333; font-size: 11px; font-weight: bold; letter-spacing: 1px;'>VIEW FULL CHECKLIST</button>
+                    </div>
+                    """, unsafe_allow_html=True)
                     
-                    # 상세 점수 내역 (왜 이 점수를 받았는가?)
-                    with st.expander(f"📊 {tk_name} 종목의 총점 {target_row['적합도 점수']}점 획득 내역 자세히 보기", expanded=True):
-                        st.markdown("이 종목이 각 카테고리에서 **어떻게 미세 점수를 획득(또는 감점)** 당했는지에 대한 상세 분석 내용입니다.")
+            with col_right:
+                if selected_display:
+                    tk_name = target_row['종목명']
+                    chart_df_d = target_row['_chart_df']
+                    chart_df_w = target_row.get('_chart_w', pd.DataFrame())
+                    chart_df_m = target_row.get('_chart_m', pd.DataFrame())
+                    markers = target_row['_markers']
+                    
+                    if not chart_df_d.empty:
+                        # 차트 타이틀을 탭과 통합
+                        st.markdown(f"""
+                        <div style='display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; margin-top: 25px;'>
+                            <h3 style='margin: 0; color: #333; font-size: 1.2rem;'>Technical Chart: {tk_name}</h3>
+                        </div>
+                        """, unsafe_allow_html=True)
                         
-                        desc_map = {
-                            'A': "주가범위 (1천원~5만원 완벽 시 10점, 5만원 초과 시 차감)",
-                            'B': "거래대금 (100억 이상부터 점수 부여, 200억 달성 시 15점 만점)",
-                            'C': "바닥 지지력 (저점 대비 안 올랐을수록 15점 만점, 35% 이상부터 0점)",
-                            'D': "최근 급등력 (10% 상승부터 점수 부여, 25% 급등 시 15점 만점)",
-                            'E': "고점 지지율 (전고점 대비 85% 지지 시 점수 부여, 완벽 지지 시 15점)",
-                            'F': "이평선 정배열 (기본 10점 + 5일선 우상향 각도에 따라 최대 +5점 가산)",
-                            'G': "5일선 이격도 (95~105% 구간에서 중심(100%)에 오차 없이 완벽 밀착할수록 15점 만점)"
-                        }
+                        tab_daily, tab_weekly, tab_monthly = st.tabs(["Daily", "Weekly", "Monthly"])
                         
-                        scores_details = target_row.get('_details', {})
-                        for key, desc in desc_map.items():
-                            status = scores_details.get(key, "미달(0점)")
-                            if "Pass" in status:
-                                st.success(f"**조건 {key}** [{desc}] ➔ 획득 점수: **{status.replace('Pass', '')}**")
-                            else:
-                                st.error(f"**조건 {key}** [{desc}] ➔ 획득 점수: 0점 (조건 미달)")
-                
-                else:
-                    st.warning("차트를 그리기 위한 과거 데이터가 부족합니다.")
+                        def create_candlestick(df_data, show_overlay=False):
+                            fig = go.Figure()
+                            fig.add_trace(go.Candlestick(
+                                x=df_data.index, open=df_data['Open'], high=df_data['High'], low=df_data['Low'], close=df_data['Close'], name='Price',
+                                increasing_line_color='#1A3626', decreasing_line_color='#D4AF37', # 시안 느낌의 고급 배색 (딥그린/골드)
+                                increasing_fillcolor='#1A3626', decreasing_fillcolor='#D4AF37'
+                            ))
+                            if show_overlay and 'MA5' in df_data.columns:
+                                fig.add_trace(go.Scatter(x=df_data.index, y=df_data['MA20'], line=dict(color='#D4AF37', width=2), name='MA20'))
+                            
+                            fig.update_layout(
+                                yaxis_title="", xaxis_rangeslider_visible=False,
+                                template="plotly_white", height=450, margin=dict(l=0, r=0, t=10, b=0),
+                                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                                hovermode='x unified'
+                            )
+                            fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='#F0F0F0')
+                            fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='#F0F0F0')
+                            return fig
+
+                        with tab_daily:
+                            st.plotly_chart(create_candlestick(chart_df_d, show_overlay=True), use_container_width=True)
+                        with tab_weekly:
+                            if not chart_df_w.empty:
+                                st.plotly_chart(create_candlestick(chart_df_w, show_overlay=False), use_container_width=True)
+                        with tab_monthly:
+                            if not chart_df_m.empty:
+                                st.plotly_chart(create_candlestick(chart_df_m, show_overlay=False), use_container_width=True)
                 
         else:
             st.warning("현재 A~G 조건을 만족하거나 점수를 획득한 종목이 없습니다.")
@@ -410,17 +455,87 @@ def main():
         st.warning("뉴스 검색 서버 상태가 불안정합니다.")
         
     # ==============================================================
-    # 6. 알림 수신 설정 영역 (사이드바에서 화면 최하단으로 이동 및 깔끔하게 개편)
+    # 6. 알림 수신 설정 영역 (Concierge Notifications - Design match)
     # ==============================================================
-    st.markdown("---")
-    st.markdown("<h3 style='color: #4B5563;'>🔔 자동 알림 수신자 설정 (이메일 & 텔레그램)</h3>", unsafe_allow_html=True)
-    st.markdown("<p style='color: #6B7280; margin-bottom: 20px;'>대표님뿐만 아니라 팀원, 지인들도 이 자동 분석 리포트를 받아볼 수 있도록 수신처를 쉽게 관리하세요. (발신 비밀번호 등은 내부에 안전하게 저장되어 숨겨져 있습니다.)</p>", unsafe_allow_html=True)
+    st.markdown("""
+    <style>
+    .concierge-section {
+        background-color: #1A3626;
+        padding: 40px;
+        border-radius: 8px;
+        margin-top: 50px;
+        margin-bottom: 30px;
+        color: white;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .concierge-title {
+        color: #D4AF37;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        font-family: 'Times New Roman', Times, serif;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .concierge-desc {
+        color: #E5E7EB;
+        font-size: 0.95rem;
+        margin-bottom: 30px;
+        line-height: 1.6;
+    }
+    .footer-block {
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+        background-color: #1A3626;
+        padding: 40px 20px;
+        text-align: center;
+        margin-top: 50px;
+        margin-bottom: -100px;
+    }
+    .footer-text {
+        color: #A3B8A8;
+        font-size: 0.85rem;
+        line-height: 1.6;
+    }
+    .footer-quote {
+        color: #D4AF37;
+        font-style: italic;
+        margin-bottom: 15px;
+    }
+    /* 텍스트 영역 테마 덮어쓰기 (다크 그린 배경용) */
+    .dark-inputs div[data-testid="stTextArea"] textarea {
+        background-color: #11281A !important;
+        color: white !important;
+        border: 1px solid #3A5F48 !important;
+    }
+    .dark-inputs label {
+        color: #D4AF37 !important;
+        font-family: 'Times New Roman', Times, serif !important;
+        letter-spacing: 1px;
+    }
+    </style>
+    <div class="concierge-section">
+        <div class="concierge-title">
+            <span style="background-color:#D4AF37; color:#1A3626; padding:5px 8px; border-radius:5px; font-size:1.2rem;">🔔</span> 
+            Concierge Notifications
+        </div>
+        <div class="concierge-desc">
+            Securely configure your dispatch channels. Your analysis reports will be delivered with the discretion and reliability of a private courier.
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # 이 입력 칸들이 dark-inputs 클래스의 영향을 받게 하려면 Streamlit 컨테이너를 직접 쓸 수밖에 없음
+    # CSS에서 부모/형제 결합자를 통해 스타일을 덮어씀 (위 style 태그 참고)
+    st.markdown('<div class="dark-inputs">', unsafe_allow_html=True)
     
     col_em, col_tg = st.columns(2)
     with col_em:
-        st.markdown("**📧 리포트를 받을 이메일 주소**")
-        st.caption("작성 예시: `홍길동: hong@gmail.com`")
-        
+        st.markdown("**✉ EMAIL ADDRESS**", unsafe_allow_html=True)
         # 만약 기존에 딕셔너리가 아닌 단순 문자열 리스트로 저장되어 있을 경우를 대비한 파싱 로직
         current_emails = config.get("emails", [])
         if current_emails and isinstance(current_emails[0], str):
@@ -429,18 +544,17 @@ def main():
             email_text_val = ""
             
         emails_str = st.text_area(
-            label="이메일 (엔터로 줄바꿈하여 여러 명 입력 가능)", 
+            label="EMAIL ADDRESS", 
             value=email_text_val, 
-            height=120,
+            height=80,
+            placeholder="e.g. your.name@domain.com",
             label_visibility="collapsed"
         )
         # 그냥 주소만 적어도, 이름: 주소 형태로 적어도 모두 사용 가능하게 처리
         config["emails"] = [e.strip() for e in emails_str.split("\n") if e.strip()]
         
     with col_tg:
-        st.markdown("**✈️ 리포트를 받을 텔레그램 ID**")
-        st.caption("작성 예시: `김대표: 8367558795`")
-        
+        st.markdown("**✈ TELEGRAM ID**", unsafe_allow_html=True)
         current_chat_ids = config.get("telegram", {}).get("chat_ids", [])
         if current_chat_ids and isinstance(current_chat_ids[0], str):
             tg_text_val = "\n".join(current_chat_ids)
@@ -448,22 +562,38 @@ def main():
             tg_text_val = ""
             
         chat_ids_str = st.text_area(
-            label="텔레그램 ID (엔터로 줄바꿈하여 여러 명 입력 가능)", 
+            label="TELEGRAM ID", 
             value=tg_text_val,
-            height=120,
+            height=80,
+            placeholder="e.g. @username",
             label_visibility="collapsed"
         )
         bot_token = config.get("telegram", {}).get("bot_token", "") # 토큰은 기존 값 그대로 유지 (숨김)
         config["telegram"] = {"bot_token": bot_token, "chat_ids": [cid.strip() for cid in chat_ids_str.split("\n") if cid.strip()]}
         
-    # 발신자 정보는 UI 노출 없이 기존 값 그대로 유지
-    sender_email = config.get("sender", {}).get("email", "")
-    sender_pw = config.get("sender", {}).get("app_password", "")
-    config["sender"] = {"email": sender_email, "app_password": sender_pw}
+    # CSS div 닫기
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    col_empty, col_save = st.columns([3, 1])
+    with col_save:
+        if st.button("💾 Save Preferences", type="primary", use_container_width=True):
+            save_config(config)
+            st.success("Preferences Saved Successfully.")
+            
+    # CSS div 닫기 (concierge-section 구역 종료)
+    st.markdown("</div>", unsafe_allow_html=True)
     
-    if st.button("💾 위 이메일과 텔레그램 리스트를 최종 수신자로 저장하기", type="primary", use_container_width=True):
-        save_config(config)
-        st.success("✅ 수신자 명단이 완벽하게 저장되었습니다! 이제 설정된 사람들에게 발송됩니다.")
+    # 7. 푸터 구역 (Footer)
+    st.markdown("""
+    <div class="footer-block">
+        <div style="font-size: 2rem; color: #D4AF37; margin-bottom: 10px;">🏛️</div>
+        <p class="footer-quote">"Trust is the currency of the gentleman's market."</p>
+        <p class="footer-text">
+            © 2026 The Premium Stock Advisor. All rights reserved.<br>
+            This service serves as a reference for investment judgment, and the actual responsibility for investment lies with the investor.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
