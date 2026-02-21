@@ -64,97 +64,144 @@ def run_strategy(ticker, today=None):
         score = 0
         details = {}
         pass_points = []
+        markers = {}  # 차트 오버레이(표시)용 이벤트 좌표 저장
         
-        # [A조건] 주가범위: 0일전 종가가 1,000원 ~ 50,000원 (10점)
-        if 1000 <= current_close <= 50000:
-            score += 10
-            details['A'] = "Pass"
-            pass_points.append('A')
+        # [A조건] 주가범위: 0일전 종가가 1,000원 ~ 50,000원 (10점 만점)
+        if 1000 <= current_close:
+            pct_score = min(10, 10 - ((current_close - 50000)/5000) if current_close > 50000 else 10)
+            if pct_score > 0:
+                score += pct_score
+                details['A'] = f"Pass({pct_score:.1f}점)"
+                pass_points.append('A')
+            else:
+                details['A'] = "Fail"
         else:
             details['A'] = "Fail"
             
-        # [B조건] 기간내 거래대금: 5일 이내 어느 하루라도 200억 이상 (15점)
+        # [B조건] 기간내 거래대금: 5일 이내 200억 이상 유무 (15점 만점)
+        # 200억을 넘는 비율에 따라 최대 15점까지 가중치 부여
         try:
             recent_5 = df.iloc[-5:]
-            max_trade_val = (recent_5['Volume'] * recent_5['Close']).max()
-            if max_trade_val >= 20_000_000_000:
-                score += 15
-                details['B'] = "Pass"
+            trade_vals = recent_5['Volume'] * recent_5['Close']
+            max_trade_val = trade_vals.max()
+            max_date = trade_vals.idxmax()
+            
+            if max_trade_val >= 10_000_000_000: # 최소 100억부터 점수 인정 시작
+                ratio = min(1.0, max_trade_val / 20_000_000_000)
+                b_score = 15.0 * ratio
+                score += b_score
+                details['B'] = f"Pass({b_score:.1f}점)"
                 pass_points.append('B')
+                markers['B_Vol'] = (max_date, recent_5.loc[max_date, 'Close'], "최대거래량")
             else:
                 details['B'] = "Fail"
         except:
             details['B'] = "Error"
             
-        # [C조건] 기간내 주가위치: 5봉전 포함 이전 20봉 이내 '최저가' 발생 (15점)
-        # 즉, 최근 20일 최저가가 최근 5일(0,1,2,3,4봉전)에는 나타나지 않는다 (최저점 찍고 올라오는 중)
+        # [C조건] 기간내 주가위치: 5봉전 20봉 이내 '최저가' (15점 만점)
+        # 최저점 대비 현재가가 얼마나 올라왔는지(너무 많이 오르지 않아야 고득점)
         try:
-            recent_20_lows = df['Low'].iloc[-20:]
-            # 최솟값을 가진 인덱스의 상대적 위치 (0 ~ 19)
-            # 19가 가장 최신(0봉전), 0이 19봉전
-            min_pos = np.argmin(recent_20_lows)
-            if min_pos <= 14: # 0봉~4봉 이전(즉 5봉전 이전)에 최저가
-                score += 15
-                details['C'] = "Pass"
+            recent_20_lows = df['Low'].iloc[-25:-5] # 정확히 5봉전~25봉전 사이의 데이터
+            min_val = recent_20_lows.min()
+            min_date = recent_20_lows.idxmin()
+            
+            # 현재가가 바닥 대비 30% 이내에 머물러 있을 때 점수 부여 (바닥권 횡보 확인)
+            rise_ratio = (current_close - min_val) / min_val
+            if rise_ratio <= 0.35: 
+                c_score = 15.0 * (1.0 - (rise_ratio / 0.35))
+                score += c_score
+                details['C'] = f"Pass({c_score:.1f}점)"
                 pass_points.append('C')
+                markers['C_Low'] = (min_date, min_val, "기간최저가")
             else:
-                details['C'] = "Fail"
+                details['C'] = "Fail(너무오름)"
         except:
             details['C'] = "Error"
             
-        # [D조건] 주가비교: 10봉 이내 15% 이상 상승봉 존재 (15점)
+        # [D조건] 주가비교: 10봉 이내 15% 이상 상승봉 (15점 만점)
+        # 상승 조건의 크기가 클수록 고득점 계산
         try:
-            recent_10 = df.iloc[-11:] # 어제비교 위해 11개
-            spike_found = False
-            for i in range(1, len(recent_10)):
-                last_c = recent_10['Close'].iloc[i-1]
-                curr_h = recent_10['High'].iloc[i]
-                if last_c > 0 and (curr_h / last_c) >= 1.15:
-                    spike_found = True
-                    break
-            if spike_found:
-                score += 15
-                details['D'] = "Pass"
+            recent_11 = df.iloc[-11:] 
+            max_spike = 0
+            spike_date = None
+            spike_price = 0
+            
+            for i in range(1, len(recent_11)):
+                last_c = recent_11['Close'].iloc[i-1]
+                curr_h = recent_11['High'].iloc[i]
+                if last_c > 0:
+                    spike_pct = curr_h / last_c
+                    if spike_pct > max_spike:
+                        max_spike = spike_pct
+                        spike_date = recent_11.index[i]
+                        spike_price = curr_h
+                        
+            if max_spike >= 1.10: # 10% 이상부터 부분 점수, 25%면 만점
+                score_ratio = min(1.0, (max_spike - 1.10) / 0.15)
+                d_score = 15.0 * score_ratio
+                score += d_score
+                details['D'] = f"Pass({d_score:.1f}점)"
                 pass_points.append('D')
+                if max_spike >= 1.15:
+                    markers['D_Spike'] = (spike_date, spike_price, f"{((max_spike-1)*100):.1f}%급등")
             else:
                 details['D'] = "Fail"
         except:
             details['D'] = "Error"
             
-        # [E조건] 주가비교: 0일전 종가 > 10봉전 고가 * 0.9 (상단 지지) (15점)
+        # [E조건] 주가상단 지지 여부: 0일전 종가 > 10봉 고가 * 0.9 (15점 만점)
         try:
             max_high_10 = df['High'].iloc[-10:].max()
-            if current_close > (max_high_10 * 0.9):
-                score += 15
-                details['E'] = "Pass"
+            retention_ratio = current_close / max_high_10
+            if retention_ratio > 0.85: # 85% 이상 지지부터 부분 점수 
+                e_score = 15.0 * min(1.0, (retention_ratio - 0.85) / 0.15)
+                score += e_score
+                details['E'] = f"Pass({e_score:.1f}점)"
                 pass_points.append('E')
             else:
                 details['E'] = "Fail"
         except:
              details['E'] = "Error"
              
-        # [F조건] 주가이평배열: 5 > 20 > 60 정배열 (15점)
+        # [F조건] 주가이평배열: 5 > 20 > 60 가중치 점수 (15점 만점)
+        # 이평선 역배열이어도 5일선이 고개를 들고 각도가 가파르면 점수 부여 (각도 계산)
         try:
             ma5 = df['MA5'].iloc[-1]
             ma20 = df['MA20'].iloc[-1]
             ma60 = df['MA60'].iloc[-1]
+            
+            # 5일선 3일 전 대비 상승 각도(비율)
+            ma5_prev = df['MA5'].iloc[-4]
+            ma5_angle = (ma5 - ma5_prev) / ma5_prev * 100
+            
+            f_score = 0
             if ma5 > ma20 and ma20 > ma60:
-                score += 15
-                details['F'] = "Pass"
+                f_score += 10 # 기본 정배열 점수
+            if ma5_angle > 0: # 5일선이 위로 꺾임 (각도 가산점 최대 5점)
+                f_score += min(5.0, ma5_angle) 
+                
+            if f_score > 0:
+                score += f_score
+                details['F'] = f"Pass({f_score:.1f}점)"
                 pass_points.append('F')
             else:
                 details['F'] = "Fail"
         except:
              details['F'] = "Error"
              
-        # [G조건] 이동평균이격도: 5일선에 98% ~ 102% 이내로 바짝 붙음 (눌림목 타점) (15점)
+        # [G조건] 이동평균이격도: 5일선에 98% ~ 102% 이내로 바짝 붙음 (15점 만점)
+        # 1.0(100%)에 완벽하게 일치할수록 15점 만점, 멀어질수록 깎임
         try:
             ma5 = df['MA5'].iloc[-1]
             ratio = current_close / ma5
-            if 0.98 <= ratio <= 1.02:
-                score += 15
-                details['G'] = "Pass"
+            diff_from_center = abs(1.0 - ratio) # 0에 가까울수록 완벽
+            
+            if diff_from_center <= 0.05: # 95% ~ 105% 사이면 점수 배분
+                g_score = 15.0 * (1.0 - (diff_from_center / 0.05))
+                score += g_score
+                details['G'] = f"Pass({g_score:.1f}점)"
                 pass_points.append('G')
+                markers['G_MA5'] = (df.index[-1], current_close, "5일선 밀착")
             else:
                 details['G'] = "Fail"
         except:
@@ -162,10 +209,10 @@ def run_strategy(ticker, today=None):
              
         pass_str = ",".join(pass_points) if pass_points else "None"
         
-        return score, details, current_close, current_chg_pct, pass_str
+        return round(score, 1), details, current_close, current_chg_pct, pass_str, df, markers
         
     except Exception as e:
-        return 0, {}, 0, 0, "Error"
+        return 0, {}, 0, 0, "Error", pd.DataFrame(), {}
 
 def scan_hot_stocks(limit=50, progress_callback=None):
     """
@@ -185,7 +232,7 @@ def scan_hot_stocks(limit=50, progress_callback=None):
     names_dict = df_cap['Name'].to_dict()
     
     for i, tk in enumerate(tickers):
-        score, details, price, chg_pct, pass_str = run_strategy(tk)
+        score, details, price, chg_pct, pass_str, df_chart, markers = run_strategy(tk)
         
         name = names_dict.get(tk, tk)
         
@@ -200,7 +247,9 @@ def scan_hot_stocks(limit=50, progress_callback=None):
                 '영업이익(억)': '실시간계산대기',
                 '시가총액(억)': market_cap_100m,
                 '적합도 점수': score,
-                '조건만족': pass_str
+                '조건만족': pass_str,
+                '_chart_df': df_chart,         # UI 전달용 숨김 데이터
+                '_markers': markers            # 오버레이 마커용 숨김 데이터
             })
             
         if progress_callback:

@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import json
 import os
+import plotly.graph_objects as go
 import engine
 
 CONFIG_FILE = "config.json"
@@ -113,8 +114,14 @@ def main():
                 color = '#d4edda' if isinstance(val, (int, float)) and val >= 90 else ''
                 return f'background-color: {color}'
             
+            # ========================================================
+            # 표 렌더링 (숨김 컬럼 제외)
+            # ========================================================
+            display_columns = [col for col in df.columns if not col.startswith('_')]
+            df_display = df[display_columns]
+            
             st.dataframe(
-                df.style.map(highlight_high_score, subset=['적합도 점수']),
+                df_display.style.map(highlight_high_score, subset=['적합도 점수']),
                 hide_index=True
             )
             
@@ -122,6 +129,82 @@ def main():
             high_score_items = df[df['적합도 점수'] >= 90]
             if not high_score_items.empty and st.button("🔔 90점 이상 종목 알림 발송하기 (수동)"):
                 st.info("이 기능은 4단계 자동화에서 완벽하게 통합될 예정입니다!", icon="ℹ️")
+                
+            st.markdown("---")
+            
+            # ========================================================
+            # 시각적 차트 분석 UI (Plotly 캔들스틱 & 오버레이)
+            # ========================================================
+            st.subheader("📊 개별 종목 정밀 차트 분석")
+            
+            # 콤보박스에 종목 표시 (종목명 + 점수)
+            df['종목표시'] = df['종목명'] + " (" + df['적합도 점수'].astype(str) + "점)"
+            
+            selected_display = st.selectbox("분석할 종목을 선택하세요 (높은 점수순 정렬):", df['종목표시'].tolist())
+            
+            if selected_display:
+                # 선택된 행(Row) 정보 추출
+                target_row = df[df['종목표시'] == selected_display].iloc[0]
+                chart_df = target_row['_chart_df']
+                markers = target_row['_markers']
+                tk_name = target_row['종목명']
+                
+                if not chart_df.empty:
+                    # Plotly 차트 객체 캔버스 생성
+                    fig = go.Figure()
+                    
+                    # 1. 캔들스틱 메인 차트 그리기
+                    fig.add_trace(go.Candlestick(
+                        x=chart_df.index,
+                        open=chart_df['Open'],
+                        high=chart_df['High'],
+                        low=chart_df['Low'],
+                        close=chart_df['Close'],
+                        name='주가'
+                    ))
+                    
+                    # 2. 이동평균선(5, 20, 60일선) 오버레이
+                    fig.add_trace(go.Scatter(x=chart_df.index, y=chart_df['MA5'], line=dict(color='magenta', width=1.5), name='5일선'))
+                    fig.add_trace(go.Scatter(x=chart_df.index, y=chart_df['MA20'], line=dict(color='orange', width=1.5), name='20일선'))
+                    fig.add_trace(go.Scatter(x=chart_df.index, y=chart_df['MA60'], line=dict(color='green', width=1.5), name='60일선'))
+                    
+                    # 3. 주요 조건 발생 지점에 텍스트 오버레이(주석/마커) 추가
+                    # markers 딕셔너리에 {'B_Vol': (날짜, 가격, 내용), ...} 형태로 들어있음
+                    for condition_key, marker_info in markers.items():
+                        m_date, m_price, m_text = marker_info
+                        fig.add_annotation(
+                            x=m_date,
+                            y=m_price,
+                            text=m_text,
+                            showarrow=True,
+                            arrowhead=2,
+                            arrowsize=1.5,
+                            arrowwidth=2,
+                            arrowcolor="Black" if condition_key != 'D_Spike' else "Red",
+                            font=dict(color="White", size=12),
+                            bgcolor="Blue" if condition_key == 'C_Low' else ("Red" if condition_key == 'D_Spike' else "Purple"),
+                            bordercolor="Black",
+                            borderwidth=1,
+                            ay=-40 # 화살표 길이
+                        )
+                        
+                    # 차트 레이아웃(디자인) 설정
+                    fig.update_layout(
+                        title=f"<b>{tk_name}</b> 기술적 분석 차트 및 타점 오버레이",
+                        yaxis_title="주가 (원)",
+                        xaxis_rangeslider_visible=False, # 하단 거추장스러운 슬라이더 숨김
+                        template="plotly_white",
+                        height=600,
+                        margin=dict(l=20, r=20, t=50, b=20)
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # 하단 코멘트
+                    st.info(f"💡 분석 코멘트: {tk_name} 달성 조건 ➔ {target_row['조건만족']}")
+                    
+                else:
+                    st.warning("차트를 그리기 위한 과거 데이터가 부족합니다.")
                 
         else:
             st.warning("현재 A~G 조건을 만족하거나 점수를 획득한 종목이 없습니다.")
