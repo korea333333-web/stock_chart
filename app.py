@@ -223,8 +223,6 @@ def main():
                     
                     st.plotly_chart(fig, use_container_width=True)
                     
-                    st.plotly_chart(fig, use_container_width=True)
-                    
                     # 상세 점수 내역 (왜 이 점수를 받았는가?)
                     with st.expander(f"📊 {tk_name} 종목의 총점 {target_row['적합도 점수']}점 획득 내역 자세히 보기", expanded=True):
                         st.markdown("이 종목이 각 카테고리에서 **어떻게 미세 점수를 획득(또는 감점)** 당했는지에 대한 상세 분석 내용입니다.")
