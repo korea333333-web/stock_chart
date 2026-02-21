@@ -201,8 +201,30 @@ def main():
                     st.plotly_chart(fig, use_container_width=True)
                     
                     # 하단 코멘트
-                    st.info(f"💡 분석 코멘트: {tk_name} 달성 조건 ➔ {target_row['조건만족']}")
+                    st.info(f"💡 시스템 한줄평: {tk_name} 종목은 조건 중 [{target_row['조건만족']}] 항목에서 점수를 획득했습니다.")
                     
+                    # 상세 점수 내역 (왜 이 점수를 받았는가?)
+                    with st.expander(f"📊 {tk_name} 종목의 총점 {target_row['적합도 점수']}점 획득 내역 자세히 보기", expanded=True):
+                        st.markdown("이 종목이 각 카테고리에서 **어떻게 미세 점수를 획득(또는 감점)** 당했는지에 대한 상세 분석 내용입니다.")
+                        
+                        desc_map = {
+                            'A': "주가범위 (1천원~5만원 완벽 시 10점, 5만원 초과 시 차감)",
+                            'B': "거래대금 (100억 이상부터 점수 부여, 200억 달성 시 15점 만점)",
+                            'C': "바닥 지지력 (저점 대비 안 올랐을수록 15점 만점, 35% 이상부터 0점)",
+                            'D': "최근 급등력 (10% 상승부터 점수 부여, 25% 급등 시 15점 만점)",
+                            'E': "고점 지지율 (전고점 대비 85% 지지 시 점수 부여, 완벽 지지 시 15점)",
+                            'F': "이평선 정배열 (기본 10점 + 5일선 우상향 각도에 따라 최대 +5점 가산)",
+                            'G': "5일선 이격도 (95~105% 구간에서 중심(100%)에 오차 없이 완벽 밀착할수록 15점 만점)"
+                        }
+                        
+                        scores_details = target_row.get('_details', {})
+                        for key, desc in desc_map.items():
+                            status = scores_details.get(key, "미달(0점)")
+                            if "Pass" in status:
+                                st.success(f"**조건 {key}** [{desc}] ➔ 획득 점수: **{status.replace('Pass', '')}**")
+                            else:
+                                st.error(f"**조건 {key}** [{desc}] ➔ 획득 점수: 0점 (조건 미달)")
+                
                 else:
                     st.warning("차트를 그리기 위한 과거 데이터가 부족합니다.")
                 

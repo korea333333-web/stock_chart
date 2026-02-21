@@ -249,7 +249,8 @@ def scan_hot_stocks(limit=50, progress_callback=None):
                 '적합도 점수': score,
                 '조건만족': pass_str,
                 '_chart_df': df_chart,         # UI 전달용 숨김 데이터
-                '_markers': markers            # 오버레이 마커용 숨김 데이터
+                '_markers': markers,           # 오버레이 마커용 숨김 데이터
+                '_details': details            # 점수 산정 세부 내역 숨김 데이터
             })
             
         if progress_callback:
