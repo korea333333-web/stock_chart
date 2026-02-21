@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import FinanceDataReader as fdr
-from pykrx import stock
 from datetime import datetime, timedelta
 import warnings
 
@@ -9,30 +8,27 @@ warnings.filterwarnings('ignore')
 
 def get_candidate_tickers(date_str=None):
     """
-    지정일 기준 KOSPI, KOSDAQ 시장에서 시가총액 500억 이상인 종목의 
+    FinanceDataReader를 활용하여 KOSPI, KOSDAQ 시장에서 시가총액 500억 이상인 종목의 
     종목코드와 종목명, 시가총액(억) 목록 데이터프레임을 리턴합니다.
     """
-    if date_str is None:
-        # 주말인 경우를 대비해 가장 최근 영업일 (보통 fdr.StockListing을 쓰거나 pykrx의 가장 최근 영업일 사용)
-        t = datetime.today()
-        # 주말 피하기
-        if t.weekday() == 5: t = t - timedelta(days=1)
-        elif t.weekday() == 6: t = t - timedelta(days=2)
-        date_str = t.strftime("%Y%m%d")
-        
     try:
-        df_kospi = stock.get_market_cap_by_ticker(date_str, market="KOSPI")
-        df_kosdaq = stock.get_market_cap_by_ticker(date_str, market="KOSDAQ")
-        df_cap = pd.concat([df_kospi, df_kosdaq])
+        # FinanceDataReader 한국 증시 (KRX) 전체 종목 리스트 
+        df = fdr.StockListing('KRX')
         
-        # 500억 = 50,000,000,000 원
-        df_filtered = df_cap[df_cap['시가총액'] >= 50000000000]
+        # 'Code', 'Market', 'Marcap' (시가총액, 원), 'Name' 등 컬럼 존재
+        # KOSPI, KOSDAQ 종목만 취합
+        df_filtered = df[(df['Market'].str.contains('KOSPI') | df['Market'].str.contains('KOSDAQ'))]
         
-        # 종목코드, 시가총액 억 단위로 변환
-        result_df = df_filtered.copy()
-        result_df['시가총액(억)'] = result_df['시가총액'] // 100000000
+        # 시가총액 500억 = 50,000,000,000 원
+        df_filtered = df_filtered[df_filtered['Marcap'] >= 50000000000].copy()
         
-        return result_df
+        # 종목코드 코드를 인덱스로
+        df_filtered = df_filtered.set_index('Code')
+        
+        # 종목코드별 시가총액 억 단위로 변환해 새 컬럼에 넣기
+        df_filtered['시가총액(억)'] = df_filtered['Marcap'] // 100000000
+        
+        return df_filtered
     except Exception as e:
         print(f"시가총액 데이터 수집 실패: {e}")
         return pd.DataFrame()
@@ -180,21 +176,19 @@ def scan_hot_stocks(limit=50):
     if df_cap.empty:
         return pd.DataFrame()
         
-    # pykrx의 정보 중 하나인 거래대금으로 정렬해서 "살아있는" 상위 50~100 종목만 뽑아 테스트 시간 단축
-    # 오늘은 간단하게 테스트 목적이므로 그냥 랜덤이나 시가총액 상위로 일부 추출합니다. (나중엔 전체)
-    # 실제로는 전체 df_cap.index.tolist() 에 돌리되, 시간상 상위 N개만 진행.
+    # 시간 절약을 위해 시가총액 상위 일부 종목만 테스트 진행
     tickers = list(df_cap.index)[:limit]
-    
     results = []
     
-    # fdr로 종목 이름 가져오기
-    krx_names = fdr.StockListing('KRX')[['Code', 'Name']].set_index('Code')['Name'].to_dict()
+    # fdr로 종목 이름 맵핑 
+    # df_cap 안의 'Name' 컬럼 활용
+    names_dict = df_cap['Name'].to_dict()
     
     for tk in tickers:
         score, details, price, chg_pct, pass_str = run_strategy(tk)
         
         if score > 0:
-            name = krx_names.get(tk, tk)
+            name = names_dict.get(tk, tk)
             market_cap_100m = df_cap.loc[tk, '시가총액(억)'] if tk in df_cap.index else 0
             
             results.append({
@@ -202,7 +196,7 @@ def scan_hot_stocks(limit=50):
                 '종목명': name,
                 '현재가(원)': price,
                 '등락률(%)': chg_pct,
-                '영업이익(억)': '크롤링대기',  # 나중에 실시간 크롤링 모듈로 업데이트
+                '영업이익(억)': '실시간계산대기',
                 '시가총액(억)': market_cap_100m,
                 '적합도 점수': score,
                 '조건만족': pass_str

@@ -2,11 +2,6 @@ streamlit
 pandas
 numpy
 finance-datareader
-pykrx
 requests
 beautifulsoup4
 lxml
-setuptools
-deprecated
-matplotlib
-multipledispatch
