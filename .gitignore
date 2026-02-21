@@ -1,0 +1,11 @@
+# Environments
+.env
+venv/
+env/
+__pycache__/
+
+# Configuration files with secrets
+config.json
+
+# Streamlit logs
+.streamlit/
