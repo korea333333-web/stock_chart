@@ -88,16 +88,25 @@ def get_latest_news():
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
 
+    import requests
     for title, (q, hl, gl, ceid) in queries.items():
         encoded_q = urllib.parse.quote(q)
         url = f"https://news.google.com/rss/search?q={encoded_q}&hl={hl}&gl={gl}&ceid={ceid}"
         
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, context=ctx, timeout=5) as response:
-                xml_data = response.read()
+            # RSS 크롤링 안정성 확보를 위한 세션 및 헤더 위장
+            session = requests.Session()
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Referer': 'https://www.google.com/'
+            }
+            # Timeout을 넉넉하게 7초로 설정하고, verify=False 로 SSL 깐깐함 완화
+            res = session.get(url, headers=headers, timeout=7, verify=False)
+            res.raise_for_status() # 400, 500 에러 발생 시 except로 던짐
             
-            root = ET.fromstring(xml_data)
+            root = ET.fromstring(res.text)
             translator = GoogleTranslator(source='auto', target='ko')
             
             for item in root.findall('.//item')[:5]: # 기사는 딱 5개만 제한

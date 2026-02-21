@@ -33,14 +33,89 @@ def main():
     config = load_config()
     
 
-    # 1. 헤더 영역 (제목 및 설명: 프리미엄 디자인)
-    st.markdown("<h1 style='text-align: center; color: #1E3A8A;'>✨ 프리미엄 주식 분석 & AI 타점 어드바이저</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #6B7280; font-size: 1.1rem;'>📊 대표님의 투자 철학(A~G)을 완벽하게 계량화하여 최적의 매수 타점을 실시간으로 찾아냅니다.</p>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #10B981; font-size: 1.0rem;'>맨 아래 <b>[수신 설정]</b>에 이메일과 텔레그램 ID를 기입해 두시면 봇이 다른 분들에게도 분석 리포트를 알아서 발송해 드립니다! 🚀</p>", unsafe_allow_html=True)
-    st.markdown("---")
+    # --- 시안 기반 커스텀 프리미엄 CSS 주입 ---
+    st.markdown("""
+    <style>
+        /* 기본 폰트를 시안과 유사한 세리프/클래식 느낌으로 강제 변경 */
+        html, body, [class*="css"], .stApp {
+            font-family: 'Times New Roman', Times, serif !important;
+            background-color: #F8F9FA !important; /* 전체 배경을 포근한 아이보리 톤으로 */
+        }
+        
+        /* 메인 컨테이너 최대 너비 확장 */
+        .block-container {
+            max-width: 1200px !important;
+            padding-top: 2rem !important;
+        }
+        
+        /* 헤더 글로벌 배너 스타일 */
+        .premium-header {
+            background-color: #1A3626; /* 딥 그린 */
+            padding: 40px 20px;
+            border-radius: 0px 0px 15px 15px;
+            margin-top: -60px; /* Streamlit 기본 여백 제거용 */
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header-title {
+            color: #FFFFFF;
+            font-size: 2.8rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin: 0 0 10px 0;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        
+        .header-title span.the {
+            color: #D4AF37; /* 골드 */
+            font-style: italic;
+        }
+        
+        .header-subtitle {
+            color: #A3B8A8;
+            font-size: 1.1rem;
+            font-style: italic;
+            margin: 0 0 15px 0;
+            letter-spacing: 0.5px;
+        }
+        
+        .header-badge {
+            display: inline-block;
+            background-color: #234731;
+            color: #D4AF37; # 골드
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid #3A5F48;
+        }
+        
+        /* 섹션 제목 스타일 */
+        .section-title {
+            color: #1A3626;
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #E5E7EB;
+            padding-bottom: 10px;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        
+    </style>
+    """, unsafe_allow_html=True)
+
+    # 1. 헤더 영역 (시안 기반 딥그린 + 골드 배너)
+    st.markdown("""
+    <div class="premium-header">
+        <div style="font-size: 2rem; color: #D4AF37; margin-bottom: 10px;">🏛️</div>
+        <h1 class="header-title"><span class="the">The</span> Premium Stock Advisor</h1>
+        <p class="header-subtitle">"An English Library Approach to Market Analysis"</p>
+        <div class="header-badge">투자 철학 계량화 & 실시간 타점 분석 시스템</div>
+    </div>
+    """, unsafe_allow_html=True)
     
     # 1.5 글로벌 & 국내 주요 증시 현황 위젯 추가
-    st.subheader("🌎 오늘의 주요 증시 현황")
+    st.markdown("<div class='section-title'>📈 Market Overview</div>", unsafe_allow_html=True)
     try:
         indices = engine.get_global_indices()
         if indices:
