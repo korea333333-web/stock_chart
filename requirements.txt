@@ -6,3 +6,4 @@ pykrx
 requests
 beautifulsoup4
 lxml
+setuptools
