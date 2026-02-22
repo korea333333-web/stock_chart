@@ -109,6 +109,7 @@ def get_latest_news():
             root = ET.fromstring(res.text)
             translator = GoogleTranslator(source='auto', target='ko')
             
+            items = []
             for item in root.findall('.//item')[:5]: # 기사는 딱 5개만 제한
                 news_title = item.find('title').text
                 news_link = item.find('link').text
@@ -143,6 +144,7 @@ def get_latest_news():
             
             results[title] = items
         except Exception as e:
+            print(f"Error fetching news for {title}: {e}")
             results[title] = [] # 에러 시 빈 리스트
             
     return results
