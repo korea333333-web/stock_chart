@@ -297,23 +297,62 @@ def main():
                 with col:
                     diff_val = data['diff']
                     pct_val = data['pct']
+                    history = data.get('history', [])
+                    
+                    # 상승은 빨간색, 하락은 파란색 (한국 증시 기준)
                     if diff_val > 0:
-                        delta_color = "normal"
+                        color_hex = "#ef4444" # 빨강
+                        arrow = "▲"
                     elif diff_val < 0:
-                        delta_color = "inverse"
+                        color_hex = "#3b82f6" # 파랑
+                        arrow = "▼"
                     else:
-                        delta_color = "off"
+                        color_hex = "#64748b" # 회색
+                        arrow = "-"
                         
-                    st.metric(
-                        label=name, 
-                        value=f"{data['close']:,.2f}", 
-                        delta=f"{diff_val:,.2f} ({pct_val:.2f}%)",
-                        delta_color=delta_color
-                    )
+                    # 미니 스파크라인 SVG 생성
+                    svg_html = ""
+                    if len(history) >= 2:
+                        h_min, h_max = min(history), max(history)
+                        h_rng = h_max - h_min if h_max != h_min else 1
+                        points = []
+                        width, height = 120, 35
+                        for i, val in enumerate(history):
+                            x = (i / (len(history) - 1)) * width
+                            y = height - ((val - h_min) / h_rng) * height
+                            points.append(f"{x},{y}")
+                        pts_str = " ".join(points)
+                        area_pts = f"0,{height} {pts_str} {width},{height}"
+                        
+                        svg_html = f'''
+                        <div style="margin-top:1rem; height:35px; width:100%;">
+                            <svg viewBox="0 0 {width} {height}" preserveAspectRatio="none" style="width:100%; height:100%; overflow:visible;">
+                                <defs>
+                                    <linearGradient id="grad_{idx}" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stop-color="{color_hex}" stop-opacity="0.25"/>
+                                        <stop offset="100%" stop-color="{color_hex}" stop-opacity="0"/>
+                                    </linearGradient>
+                                </defs>
+                                <polygon points="{area_pts}" fill="url(#grad_{idx})" />
+                                <polyline points="{pts_str}" fill="none" stroke="{color_hex}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        '''
+                        
+                    st.markdown(f"""
+                    <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.25rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); height: 100%;">
+                        <div style="font-size: 0.875rem; color: #64748b; font-weight: 500; margin-bottom: 0.25rem;">{name}</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem;">{data['close']:,.2f}</div>
+                        <div style="font-size: 0.875rem; font-weight: 600; color: {color_hex};">
+                            {arrow} {abs(diff_val):,.2f} ({pct_val:+.2f}%)
+                        </div>
+                        {svg_html}
+                    </div>
+                    """, unsafe_allow_html=True)
         else:
             st.info("실시간 증시 데이터를 불러오는 중입니다.")
     except Exception as e:
-        st.warning("증시 데이터를 불러오지 못했습니다.")
+        st.warning(f"증시 데이터를 불러오지 못했습니다. {e}")
         
     current_time_str = datetime.now().strftime("%Y년 %m월 %d일 %H시 %M분")
     st.markdown(f"""

@@ -62,11 +62,12 @@ def get_global_indices():
                 prev = df['Close'].iloc[-2]
                 diff = curr - prev
                 pct = (diff / prev) * 100
-                results[name] = {"close": curr, "diff": diff, "pct": pct}
+                history = df['Close'].tolist()
+                results[name] = {"close": curr, "diff": diff, "pct": pct, "history": history}
             else:
-                results[name] = {"close": 0, "diff": 0, "pct": 0}
+                results[name] = {"close": 0, "diff": 0, "pct": 0, "history": []}
         except Exception as e:
-            results[name] = {"close": 0, "diff": 0, "pct": 0}
+            results[name] = {"close": 0, "diff": 0, "pct": 0, "history": []}
             
     return results
 
