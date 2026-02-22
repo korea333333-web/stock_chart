@@ -74,13 +74,13 @@ def get_latest_news():
     """Google News RSS를 활용하여 주요 키워드별 최신 기사를 5개씩 가져옵니다."""
     results = {}
     
-    # 카테고리별 검색어 (검색어, hl, gl, ceid)
+    # 카테고리별 검색어 (검색어, hl, gl, ceid) - 주요 기사 및 퀄리티 위주로 큐레이션 개선
     queries = {
-        "🇰🇷 한국 증시 (국내 뉴스)": ("한국 증시", "ko", "KR", "KR:ko"),
-        "🇰🇷 한국 경제 (국내 뉴스)": ("한국 경제", "ko", "KR", "KR:ko"),
-        "🇺🇸 미국 증시 (국내 뉴스)": ("미국 증시", "ko", "KR", "KR:ko"),
-        "🇺🇸 미국 경제 (국내 뉴스)": ("미국 경제", "ko", "KR", "KR:ko"),
-        "🌎 외신이 본 KOREA (NYT/Reuters 등)": ("South Korea economy OR South Korea stock OR KOSPI", "en-US", "US", "US:en")
+        "🇰🇷 국내 증시 주요뉴스": ("국내 증시 주요뉴스 OR 코스피 시황", "ko", "KR", "KR:ko"),
+        "🇰🇷 국내 경제 핫이슈": ("한국 경제 주요기사 OR 경제 동향", "ko", "KR", "KR:ko"),
+        "🇺🇸 글로벌 증시 마감/시황": ("미국 증시 주요뉴스 OR 뉴욕증시 마감", "ko", "KR", "KR:ko"),
+        "🇺🇸 연준/금리/거시경제": ("Fed 금리 주요뉴스 OR 연준 미국 경제", "ko", "KR", "KR:ko"),
+        "🌎 글로벌 경제 오피니언 (외신)": ("global economy major news OR Wall Street stock market analysis", "en-US", "US", "US:en")
     }
     
     # SSL 우회 설정 (특정 환경 오류 방지)
