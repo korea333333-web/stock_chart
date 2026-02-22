@@ -466,8 +466,8 @@ def main():
     st.markdown("<br>", unsafe_allow_html=True)
     
     # 5. 주요 뉴스 연동
-    st.markdown("<div class='custom-section-title'>오늘의 주요 증시 뉴스</div>", unsafe_allow_html=True)
-    with st.spinner("최신 글로벌 뉴스를 불러오는 중입니다..."):
+    st.markdown("<div class='custom-section-title'>🌍 테마별 핵심 뉴스 브리핑</div>", unsafe_allow_html=True)
+    with st.spinner("최신 글로벌 뉴스를 실시간으로 수집 중입니다..."):
         news_data = engine.get_latest_news()
         
     if news_data:
@@ -476,13 +476,13 @@ def main():
             with tab:
                 if items:
                     for item in items:
-                        st.markdown(f"- **[{item['source']}]** <a href='{item['link']}' target='_blank' style='text-decoration:none; color:#1D4ED8; font-weight:600;'>{item['title']}</a> <span style='color:#9CA3AF; font-size:0.85rem;'>({item['date']})</span>", unsafe_allow_html=True)
+                        st.markdown(f"- **[{item['source']}]** <a href='{item['link']}' target='_blank' style='text-decoration:none; color:#1D4ED8; font-weight:500;'>{item['title']}</a> <span style='color:#64748b; font-size:0.8rem;'>({item['date']})</span>", unsafe_allow_html=True)
                         if item.get("title_ko") and item.get("title_ko") != "(번역 실패)":
-                            st.markdown(f"<div style='margin-left:20px; color:#059669; font-size:0.9rem;'>🇰🇷 {item['title_ko']}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div style='margin-left:20px; color:#0f766e; font-size:0.85rem; margin-top: 4px; margin-bottom: 8px;'>🇰🇷 {item['title_ko']}</div>", unsafe_allow_html=True)
                 else:
-                    st.info("관련 최신 뉴스가 없습니다.")
+                    st.info("현재 이 카테고리의 최신 뉴스를 불러오지 못했습니다.")
     else:
-        st.warning("뉴스 검색 서버에 연결할 수 없습니다.")
+        st.warning("뉴스 검색 서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.")
         
     st.markdown("<br><hr style='border:0; border-top:1px solid #e2e8f0;'><br>", unsafe_allow_html=True)
     
