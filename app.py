@@ -120,25 +120,34 @@ def main():
             align-items: center;
         }
         
-        /* 검색 버튼 (Shadcn Primary) */
-        div[data-testid="stButton"] > button {
-            background-color: #0f172a !important;
-            color: #f8fafc !important;
-            border: 1px solid #0f172a !important;
-            border-radius: 0.375rem !important;
-            font-weight: 500 !important;
-            font-size: 0.875rem !important;
-            padding: 0.5rem 1rem !important;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        /* 검색 버튼 (Shadcn Primary -> Premium CTA) */
+        div[data-testid="stButton"] > button[kind="primary"] {
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-radius: 0.5rem !important;
+            font-weight: 700 !important;
+            font-size: 1.125rem !important; /* 글씨 크기 키움 */
+            padding: 0.75rem 1.5rem !important; /* 위아래 패딩 증가 */
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.4), 0 2px 4px -1px rgba(37, 99, 235, 0.2) !important;
             width: 100% !important;
-            transition: all 0.15s ease-in-out !important;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            letter-spacing: -0.025em;
         }
-        div[data-testid="stButton"] > button:hover {
-            background-color: #1e293b !important;
-            border-color: #1e293b !important;
+        div[data-testid="stButton"] > button[kind="primary"]:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.5), 0 4px 6px -2px rgba(37, 99, 235, 0.3) !important;
+            background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%) !important;
         }
-        div[data-testid="stButton"] > button:focus:not(:focus-visible) {
-            color: #f8fafc !important;
+        div[data-testid="stButton"] > button[kind="primary"]:active {
+            transform: translateY(0px) !important;
+        }
+        div[data-testid="stButton"] > button[kind="primary"] p {
+            font-size: 1.125rem !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         
         /* Secondary Button */
@@ -325,30 +334,30 @@ def main():
                         area_pts = f"0,{height} {pts_str} {width},{height}"
                         
                         svg_html = f'''
-                        <div style="margin-top:1rem; height:35px; width:100%;">
-                            <svg viewBox="0 0 {width} {height}" preserveAspectRatio="none" style="width:100%; height:100%; overflow:visible;">
-                                <defs>
-                                    <linearGradient id="grad_{idx}" x1="0%" y1="0%" x2="0%" y2="100%">
-                                        <stop offset="0%" stop-color="{color_hex}" stop-opacity="0.25"/>
-                                        <stop offset="100%" stop-color="{color_hex}" stop-opacity="0"/>
-                                    </linearGradient>
-                                </defs>
-                                <polygon points="{area_pts}" fill="url(#grad_{idx})" />
-                                <polyline points="{pts_str}" fill="none" stroke="{color_hex}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        '''
+<div style="margin-top:1rem; height:35px; width:100%;">
+    <svg viewBox="0 0 {width} {height}" preserveAspectRatio="none" style="width:100%; height:100%; overflow:visible;">
+        <defs>
+            <linearGradient id="grad_{idx}" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="{color_hex}" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="{color_hex}" stop-opacity="0"/>
+            </linearGradient>
+        </defs>
+        <polygon points="{area_pts}" fill="url(#grad_{idx})" />
+        <polyline points="{pts_str}" fill="none" stroke="{color_hex}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+</div>
+'''
                         
                     st.markdown(f"""
-                    <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.25rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); height: 100%;">
-                        <div style="font-size: 0.875rem; color: #64748b; font-weight: 500; margin-bottom: 0.25rem;">{name}</div>
-                        <div style="font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem;">{data['close']:,.2f}</div>
-                        <div style="font-size: 0.875rem; font-weight: 600; color: {color_hex};">
-                            {arrow} {abs(diff_val):,.2f} ({pct_val:+.2f}%)
-                        </div>
-                        {svg_html}
-                    </div>
-                    """, unsafe_allow_html=True)
+<div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.25rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); height: 100%;">
+    <div style="font-size: 0.875rem; color: #64748b; font-weight: 500; margin-bottom: 0.25rem;">{name}</div>
+    <div style="font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem;">{data['close']:,.2f}</div>
+    <div style="font-size: 0.875rem; font-weight: 600; color: {color_hex};">
+        {arrow} {abs(diff_val):,.2f} ({pct_val:+.2f}%)
+    </div>
+    {svg_html}
+</div>
+""", unsafe_allow_html=True)
         else:
             st.info("실시간 증시 데이터를 불러오는 중입니다.")
     except Exception as e:
@@ -362,9 +371,20 @@ def main():
     """, unsafe_allow_html=True)
     
     # 3. 실시간 검색 결과
-    st.markdown("<div class='custom-section-title'>실시간 검색 결과</div>", unsafe_allow_html=True)
+    st.markdown("<div class='custom-section-title'>📊 실시간 종목 스캐너</div>", unsafe_allow_html=True)
     
-    start_search = st.button("지금 실시간 검색 돌리기", type="primary", use_container_width=True)
+    # 돋보이게 만드는 문구 추가
+    st.markdown("""
+    <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 0.5rem; padding: 1.5rem; text-align: center; margin-bottom: 1.5rem;">
+        <h3 style="color: #0f172a; margin-top: 0; font-size: 1.125rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-radar"><path d="M19.07 4.93A10 10 0 0 0 6.99 3.34"/><path d="M4 6h.01"/><path d="M2.29 9.62A10 10 0 1 0 21.31 8.35"/><path d="M16.24 7.76A6 6 0 1 0 8.23 16.67"/><path d="M12 18h.01"/><path d="M17.99 11.66A6 6 0 0 1 15.77 16.67"/><circle cx="12" cy="12" r="2"/><path d="m13.41 10.59 5.66-5.66"/></svg>
+            지금 어떤 종목이 투자 조건에 맞는지 확인해 보세요!
+        </h3>
+        <p style="color: #64748b; font-size: 0.875rem; margin-bottom: 1.5rem;">버튼을 누르면 시가총액 상위 종목들을 대상으로 A~G 조건 스캔 엔진이 가동됩니다.</p>
+    """, unsafe_allow_html=True)
+    
+    start_search = st.button("🚀 AI 초정밀 조건 스캔 시작하기", type="primary", use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True) # dashed 컨테이너 닫기
         
     if start_search:
         st.info("상위 시가총액 종목을 스캔 중입니다... 잠시만 기다려주세요.")
